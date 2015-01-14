@@ -8,16 +8,15 @@ class FTPClient {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter server IP Address: ");
         String ipAddr = scanner.next();
-        System.out.print("\nEnter port number: ");
+        System.out.print("Enter port number: ");
         int portNo = scanner.nextInt();
-        
+        Socket clientSocket;
         try {
-            Socket clientSocket = new Socket(ipAddr, portNo);
+            clientSocket = new Socket(ipAddr, portNo);
         } catch (Exception e) {
             System.out.println("Error connecting to server.");
-            return 1;
+            return;
         }
-
 
         // Initialized reader objects
         BufferedInputStream inFromServer = new BufferedInputStream(clientSocket.getInputStream());
@@ -28,17 +27,25 @@ class FTPClient {
         String filePath = scanner.next();
         outToServer.writeBytes(filePath+"\n");
         
-        //Initialized File creator object
-        FileOutputStream fileFromServer = new FileOutputStream(filePath);
-        
-        //Collect bytes until complete 
-        while(true) {
-            int b = inFromServer.read(); //grab byte from server
-            if (b == -1) //if end of file, break loop
-                break;
-            fileFromServer.write(b); //write byte to file
+        //read first byte from file
+        int b = inFromServer.read();
+        if (b == 254) {
+            System.out.println("File Not Found On Server");
+        } else {
+            //Initialized File creator object
+            FileOutputStream fileFromServer = new FileOutputStream(filePath);
+            if (b >= 0) //check its not -1 (for some reason)
+                fileFromServer.write(b); //write first byte to file
+            
+            //grab rest of bytes 1 at a time
+            while (true) {
+                b = inFromServer.read();
+                if (b == -1) //signifies end of file
+                    break;
+                //write bytes to file
+                fileFromServer.write(b);
+            }
         }
-        
         //close socket connection
         clientSocket.close();
     }
