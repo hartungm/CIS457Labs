@@ -5,7 +5,19 @@ import java.util.*;
 class FTPClient {
     public static void main(String args[]) throws Exception {
         
-        Socket clientSocket = new Socket("127.0.0.1", 9876);
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter server IP Address: ");
+        String ipAddr = scanner.next();
+        System.out.print("\nEnter port number: ");
+        int portNo = scanner.nextInt();
+        
+        try {
+            Socket clientSocket = new Socket(ipAddr, portNo);
+        } catch (Exception e) {
+            System.out.println("Error connecting to server.");
+            return 1;
+        }
+
 
         // Initialized reader objects
         BufferedInputStream inFromServer = new BufferedInputStream(clientSocket.getInputStream());
@@ -13,14 +25,13 @@ class FTPClient {
         
         // Read file path from user and request from server
         System.out.print("Enter a file path: ");
-        Scanner scanner = new Scanner(System.in);
         String filePath = scanner.next();
         outToServer.writeBytes(filePath+"\n");
         
         //Initialized File creator object
         FileOutputStream fileFromServer = new FileOutputStream(filePath);
         
-       //Collect bytes until complete 
+        //Collect bytes until complete 
         while(true) {
             int b = inFromServer.read(); //grab byte from server
             if (b == -1) //if end of file, break loop
