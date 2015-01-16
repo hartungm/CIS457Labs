@@ -29,18 +29,17 @@ class FTPClient {
         
         //read first byte from file
         int b = inFromServer.read();
-        if (b == 254) {
+        if (b == -1) {
             System.out.println("File Not Found On Server");
         } else {
             //Initialized File creator object
             FileOutputStream fileFromServer = new FileOutputStream(filePath);
-            if (b >= 0) //check its not -1 (for some reason)
-                fileFromServer.write(b); //write first byte to file
+            fileFromServer.write(b); //write first byte to file
             
             //grab rest of bytes 1 at a time
             while (true) {
                 b = inFromServer.read();
-                if (b == -1) //signifies end of file
+                if (b == -1)  //signifies end of file
                     break;
                 //write bytes to file
                 fileFromServer.write(b);
