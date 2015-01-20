@@ -1,14 +1,15 @@
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
-class TCPServer {
+class ChatRoomServer {
     public static void main(String argv[]) throws Exception{
         ServerSocket listenSocket = new ServerSocket(9876);
         ArrayList<Socket> sockets = new ArrayList<Socket>();
         while(true) {
             Socket s=listenSocket.accept();
             sockets.add(s);
-            Runnable r = new ClientHandler(s);
+            Runnable r = new ClientHandler(s, "", sockets);
             Thread t = new Thread(r);
             t.start();
         }
@@ -37,8 +38,13 @@ class ClientHandler implements Runnable {
                     outToClient.writeBytes(person + " said: " + clientMessage + '\n');
                 }
             }
+            sockets.remove(connectionSocket);
             connectionSocket.close();
-        } catch (Exception e) {
+        } 
+        catch(IOException e) {
+            return;
+        }
+        catch (Exception e) {
             System.out.println("an error happened");
         }
     }

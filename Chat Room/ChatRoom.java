@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.*;
 
-class TCPServer {
+class ChatRoomServer {
     public static void main(String argv[]) throws Exception{
         ServerSocket listenSocket = new ServerSocket(9876);
         ArrayList<Socket> sockets = new ArrayList<Socket>();
