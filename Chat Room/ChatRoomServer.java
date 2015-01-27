@@ -3,13 +3,14 @@ import java.net.*;
 import java.util.*;
 
 class ChatRoomServer {
-    public static void main(String argv[]) throws Exception{
+    public static void main(String argv[]) throws Exception {
         ServerSocket listenSocket = new ServerSocket(9876);
         ArrayList<Socket> sockets = new ArrayList<Socket>();
+        int i = 1;
         while(true) {
             Socket s=listenSocket.accept();
             sockets.add(s);
-            Runnable r = new ClientHandler(s, "", sockets);
+            Runnable r = new ClientHandler(s, Integer.toString(i++), sockets);
             Thread t = new Thread(r);
             t.start();
         }
@@ -25,6 +26,7 @@ class ClientHandler implements Runnable {
         this.connectionSocket = connection;
         this.person = person;
         this.sockets = sockets;
+        System.out.println(person + " Connected!");
     }
     public void run() {
         try {
@@ -42,12 +44,12 @@ class ClientHandler implements Runnable {
             connectionSocket.close();
         } 
         catch(IOException e) {
+            System.out.println(person + " Disconnected!");
             return;
         }
         catch (Exception e) {
             System.out.println("an error happened");
         }
     }
-
 
 }
