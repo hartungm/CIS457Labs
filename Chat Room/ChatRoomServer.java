@@ -26,7 +26,7 @@ class ClientHandler implements Runnable {
         this.connectionSocket = connection;
         this.person = person;
         this.sockets = sockets;
-        System.out.println(person + " Connected!");
+        System.out.println(person + " Connected!\nConnected on " + connection.getRemoteSocketAddress().toString().substring(1));
     }
     public void run() {
         try {
