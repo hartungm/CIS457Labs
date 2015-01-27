@@ -48,7 +48,12 @@ class ClientListener implements Runnable {
                     break;
                 }
                 String serverMessage = reader.readLine();
-                System.out.println(serverMessage);
+                if (serverMessage != null) {
+                    System.out.println(serverMessage);
+                } else {
+                    System.out.println("Server DIED!!!");
+                    break;
+                }
             }
             catch(IOException e) {
                 return;
