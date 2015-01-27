@@ -20,7 +20,7 @@ class ChatRoomClient {
         Thread t = new Thread(r);
         t.start();
 
-        while(message != "exit") {
+        while(!message.equals("/exit")) {
             
             BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Enter a message: ");
