@@ -7,7 +7,12 @@ import java.util.*;
 class ChatRoomClient {
     public static void main(String args[]) throws Exception {
         String message = "";
-        Socket clientSocket = new Socket("127.0.0.1",9876);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter server IP Address: ");
+        String ipAddr = scanner.next();
+        System.out.println("Enter port number: ");
+        int portNo = scanner.nextInt();
+        Socket clientSocket = new Socket(ipAddr, portNo);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
