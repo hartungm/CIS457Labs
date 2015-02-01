@@ -24,11 +24,12 @@ class ClientHandler implements Runnable {
     }
     
     public void run() {
-    	final String ROOT = "C:/Users/Carlton/Documents/GitHub/CIS457Labs/HTTP Server";
+    	final String ROOT = "./";
     	
     	Map<String, String> contentTypes = new HashMap<String, String>();
     	contentTypes.put(".html", "text/html");
     	contentTypes.put(".txt", "text/plain");
+        contentTypes.put(".css", "text/css");
     	contentTypes.put(".jpg", "image/jpeg");
     	contentTypes.put(".jpeg", "image/jpeg");
     	contentTypes.put(".pdf", "application/pdf");
@@ -51,7 +52,36 @@ class ClientHandler implements Runnable {
                 getLine = requestLines[0].split(" ");
                 filePath = ROOT + getLine[1];
             } else {
-            	// Unsupported request header
+            	 String clientOutput = "The functionality you are trying to use is not implemented by this server. (These are not the droids you're looking for)";
+                String response =   "HTTP/1.1 501 Not Implemented\r\n" +
+                                    "Date: " + df.format(date) + "\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + clientOutput.length() + "\r\n" +
+                                    "Connection: close\r\n\r\n";
+                System.out.println(response);
+                output.writeBytes(response);
+                output.writeBytes(clientOutput);
+                output.flush();
+                break;
+            }
+
+            String[] filePathArr = filePath.split("/");
+            int securityCounter = 0;
+            int i = 0;
+            while(i < filePathArr.length && securityCounter >= 0)
+            {
+                if(filePathArr[i].equals(".."))
+                {
+                    securityCounter--;
+                }
+                else {
+                    securityCounter++;
+                }
+                i++;
+            }
+            if(securityCounter < 0) {
+                System.out.println("Security Issue detected, access denied");
+                //Send Access Denied Response back to html
             }
             
             Date date = new Date();
@@ -59,32 +89,45 @@ class ClientHandler implements Runnable {
             df.setTimeZone(TimeZone.getTimeZone("GMT"));
             
             File requestedFile = new File(filePath);
-            if(!requestedFile.exists()) {
-            	// 404 error
+            
+            if(requestedFile.exists()) {
+                String fileType = filePath.substring(filePath.lastIndexOf("."), filePath.length());
+                
+                String contentType = contentTypes.get(fileType.toLowerCase());
+                if(contentType == null) {
+                	// Unsupported File Type
+                }
+                
+                String response = "HTTP/1.1 200 OK\r\n"
+                				+ "Date: " + df.format(date) + "\r\n"
+                				+ "Last-Modified: " + df.format(new Date(requestedFile.lastModified())) + "\r\n" 
+                				+ "Content-Type: " + contentType + "\r\n" 
+                				+ "Content-Length: " + requestedFile.length() + "\r\n\r\n";
+                
+                System.out.println(response);
+                output.writeBytes(response);
+                
+                byte[] fileData = new byte[(int) requestedFile.length()];
+                FileInputStream fileInput = new FileInputStream(requestedFile);
+                fileInput.read(fileData);
+                fileInput.close();
+                
+                output.write(fileData);
+                output.flush();
             }
-            String fileType = filePath.substring(filePath.lastIndexOf("."), filePath.length());
-            
-            String contentType = contentTypes.get(fileType.toLowerCase());
-            if(contentType == null) {
-            	// Unsupported File Type
+            else {
+                String clientOutput = "404 File not Found!";
+                String response =   "HTTP/1.1 404 Not Found\r\n" +
+                                    "Date: " + df.format(date) + "\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + clientOutput.length() + "\r\n" +
+                                    "Connection: close\r\n\r\n";
+                System.out.println(response);
+                output.writeBytes(response);
+                output.writeBytes(clientOutput);
+                output.flush();
             }
-            
-            String response = "HTTP/1.1 200 OK\r\n"
-            				+ "Date: " + df.format(date) + "\r\n"
-            				+ "Last-Modified: " + df.format(new Date(requestedFile.lastModified())) + "\r\n" 
-            				+ "Content-Type: " + contentType + "\r\n" 
-            				+ "Content-Length: " + requestedFile.length() + "\r\n\r\n";
-            
-            System.out.println(response);
-            output.writeBytes(response);
-            
-            byte[] fileData = new byte[(int) requestedFile.length()];
-            FileInputStream fileInput = new FileInputStream(requestedFile);
-            fileInput.read(fileData);
-            fileInput.close();
-            
-            output.write(fileData);
-            output.flush();
+            connectionSocket.close();
         } 
         catch(IOException e) {
         	e.printStackTrace();
