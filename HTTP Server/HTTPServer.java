@@ -51,8 +51,10 @@ class ClientHandler implements Runnable {
             if(requestLines[0].contains("GET") && requestLines[0].contains("HTTP/1.1")) {
                 getLine = requestLines[0].split(" ");
                 filePath = ROOT + getLine[1];
-            } else {
-            	 String clientOutput = "The functionality you are trying to use is not implemented by this server. (These are not the droids you're looking for)";
+            } else {    
+
+                // Errors for non-implemented response headers
+            	String clientOutput = "The functionality you are trying to use is not implemented by this server. (These are not the droids you're looking for)";
                 String response =   "HTTP/1.1 501 Not Implemented\r\n" +
                                     "Date: " + df.format(date) + "\r\n" +
                                     "Content-Type: text/plain\r\n" +
@@ -62,6 +64,7 @@ class ClientHandler implements Runnable {
                 output.writeBytes(response);
                 output.writeBytes(clientOutput);
                 output.flush();
+                connectionSocket.close();
                 break;
             }
 
@@ -79,9 +82,22 @@ class ClientHandler implements Runnable {
                 }
                 i++;
             }
+
+            // Access Denied to directory
             if(securityCounter < 0) {
-                System.out.println("Security Issue detected, access denied");
-                //Send Access Denied Response back to html
+                String clientOutput = "Security Issue detected, access denied";
+                System.out.println(clientOutput);
+                String response =   "HTTP/1.1 403 Forbidden\r\n" +
+                                    "Date: " + df.format(date) + "\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + clientOutput.length() + "\r\n" +
+                                    "Connection: close\r\n\r\n";
+                System.out.println(response);
+                output.writeBytes(response);
+                output.writeBytes(clientOutput);
+                output.flush();
+                connectionSocket.close();
+                break;
             }
             
             Date date = new Date();
@@ -116,6 +132,8 @@ class ClientHandler implements Runnable {
                 output.flush();
             }
             else {
+
+                // File not Found Errors
                 String clientOutput = "404 File not Found!";
                 String response =   "HTTP/1.1 404 Not Found\r\n" +
                                     "Date: " + df.format(date) + "\r\n" +
