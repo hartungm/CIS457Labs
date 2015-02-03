@@ -37,6 +37,10 @@ class ClientHandler implements Runnable {
         try {
             BufferedInputStream reader = new BufferedInputStream(connectionSocket.getInputStream());
             DataOutputStream output = new DataOutputStream(connectionSocket.getOutputStream());
+
+            Date date = new Date();
+            SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy kk:mm:ss zzz");
+            df.setTimeZone(TimeZone.getTimeZone("GMT"));
             
             byte[] requestBytes = new byte[5000];
             reader.read(requestBytes, 0, 5000);
@@ -65,7 +69,7 @@ class ClientHandler implements Runnable {
                 output.writeBytes(clientOutput);
                 output.flush();
                 connectionSocket.close();
-                break;
+                return;
             }
 
             String[] filePathArr = filePath.split("/");
@@ -97,12 +101,8 @@ class ClientHandler implements Runnable {
                 output.writeBytes(clientOutput);
                 output.flush();
                 connectionSocket.close();
-                break;
+                //break;
             }
-            
-            Date date = new Date();
-            SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy kk:mm:ss zzz");
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
             
             File requestedFile = new File(filePath);
             
@@ -118,7 +118,8 @@ class ClientHandler implements Runnable {
                 				+ "Date: " + df.format(date) + "\r\n"
                 				+ "Last-Modified: " + df.format(new Date(requestedFile.lastModified())) + "\r\n" 
                 				+ "Content-Type: " + contentType + "\r\n" 
-                				+ "Content-Length: " + requestedFile.length() + "\r\n\r\n";
+                				+ "Content-Length: " + requestedFile.length() + "\r\n"
+                                + "Connection: keep-alive\r\n\r\n";
                 
                 System.out.println(response);
                 output.writeBytes(response);
@@ -145,7 +146,7 @@ class ClientHandler implements Runnable {
                 output.writeBytes(clientOutput);
                 output.flush();
             }
-            connectionSocket.close();
+            //connectionSocket.close();
         } 
         catch(IOException e) {
         	e.printStackTrace();
