@@ -106,7 +106,7 @@ class ClientHandler implements Runnable {
             
             File requestedFile = new File(filePath);
             
-            if(requestedFile.exists()) {
+            if(requestedFile.exists() && !requestedFile.isDirectory()) {
                 String fileType = filePath.substring(filePath.lastIndexOf("."), filePath.length());
                 
                 String contentType = contentTypes.get(fileType.toLowerCase());
