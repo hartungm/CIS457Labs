@@ -184,7 +184,6 @@ class ClientHandler implements Runnable {
                 }
                 
                 Date fileModDate = new Date(requestedFile.lastModified());
-                System.out.println("file mod: " + df.format(fileModDate));
 
                 for (i=0; i<requestLines.length; i++) {
                     if(requestLines[i].contains("If-Modified-Since:")) {
