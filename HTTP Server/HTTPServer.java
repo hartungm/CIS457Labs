@@ -49,6 +49,9 @@ class HTTPServer {
             catch (NumberFormatException n) {
                 System.out.println("Invalid Port Number!");
             }
+            catch (BindException b) {
+                System.out.println("Port Unavailable!");
+            }
         } else {
             System.out.println("Invalid Number of Arguments!");
         }
