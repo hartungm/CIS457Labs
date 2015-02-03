@@ -4,27 +4,82 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 class HTTPServer {
-    public static void main(String argv[]) throws Exception {
-        ServerSocket listenSocket = new ServerSocket(8080);
-        
-        while(true) {
-            Socket s = listenSocket.accept();
-            Runnable r = new ClientHandler(s);
-            Thread t = new Thread(r);
-            t.start();
+    public static void main(String[] args) throws Exception {
+        String docRoot = null;
+        int port = -1;
+        String logPath = null;
+        boolean errors = false;
+
+        if (args.length == 0 || (args.length >= 2 && args.length <= 6 && args.length % 2 == 0)) {
+            try {
+                for (int i=0; i<args.length-1; i+=2) {
+                    switch(args[i]) {
+                        case "-p": 
+                            port = Integer.parseInt(args[i+1]);
+                            break;
+                        case "-docroot": 
+                            docRoot = args[i+1];
+                            break;
+                        case "-logfile": 
+                            logPath = args[i+1];
+                            break;
+                        default: 
+                            System.out.println("Invalid Argument: " + args[i]);
+                            errors = true;
+                            break;
+                    }
+                }
+                if (port == -1) {
+                    port = 8080;
+                }
+                if (!errors) {
+                    ServerSocket listenSocket = new ServerSocket(port);
+                    
+                    while(true) {
+                        Socket s = listenSocket.accept();
+                        Runnable r = new ClientHandler(s, docRoot, logPath);
+                        Thread t = new Thread(r);
+                        t.start();
+                    }
+                }
+            }
+            catch (NumberFormatException n) {
+                System.out.println("Invalid Port Number!");
+            }
+        } else {
+            System.out.println("Invalid Number of Arguments!");
         }
     }
 }
 
 class ClientHandler implements Runnable {
     Socket connectionSocket;
+    String docRoot;
+    String logPath;
+    boolean logging;
+    BufferedWriter logFile;
     
-    ClientHandler(Socket connection) {
+    ClientHandler(Socket connection, String docRoot, String logPath) {
         this.connectionSocket = connection;
+
+        this.docRoot = docRoot;
+        if (this.docRoot == null) {
+            this.docRoot = "./";
+        }
+
+        this.logPath = logPath;
+        this.logging = this.logPath != null;
+        if (logging) {
+            try {
+                this.logFile = new BufferedWriter(new FileWriter(logPath));
+            }
+            catch(IOException ex) {
+                ex.printStackTrace();
+            }
+        }
     }
     
     public void run() {
-    	final String ROOT = "./";
     	
     	Map<String, String> contentTypes = new HashMap<String, String>();
     	contentTypes.put(".html", "text/html");
@@ -49,26 +104,37 @@ class ClientHandler implements Runnable {
             String[] requestLines = request.split("\r\n");
             
             System.out.println(request);
+            if (logging) {
+                logFile.write(request);
+                logFile.flush();
+            }
             
             String[] getLine;
             String filePath = "";
             if(requestLines[0].contains("GET") && requestLines[0].contains("HTTP/1.1")) {
                 getLine = requestLines[0].split(" ");
-                filePath = ROOT + getLine[1];
+                filePath = docRoot + getLine[1];
             } else {    
-
+                System.out.println(requestLines[0]);
+                if (requestLines[0] == null) {
+                    System.out.println("its null, apparently");
+                }
                 // Errors for non-implemented response headers
             	String clientOutput = "The functionality you are trying to use is not implemented by this server. (These are not the droids you're looking for)";
                 String response =   "HTTP/1.1 501 Not Implemented\r\n" +
                                     "Date: " + df.format(date) + "\r\n" +
                                     "Content-Type: text/plain\r\n" +
                                     "Content-Length: " + clientOutput.length() + "\r\n" +
-                                    "Connection: close\r\n\r\n";
+                                    "Connection: keep-alive\r\n\r\n";
                 System.out.println(response);
+                if (logging) {
+                    logFile.write(response);
+                    logFile.flush();
+                }
                 output.writeBytes(response);
                 output.writeBytes(clientOutput);
                 output.flush();
-                connectionSocket.close();
+                //connectionSocket.close();
                 return;
             }
 
@@ -97,6 +163,10 @@ class ClientHandler implements Runnable {
                                     "Content-Length: " + clientOutput.length() + "\r\n" +
                                     "Connection: close\r\n\r\n";
                 System.out.println(response);
+                if (logging) {
+                    logFile.write(response);
+                    logFile.flush();
+                }
                 output.writeBytes(response);
                 output.writeBytes(clientOutput);
                 output.flush();
@@ -122,6 +192,10 @@ class ClientHandler implements Runnable {
                                 + "Connection: keep-alive\r\n\r\n";
                 
                 System.out.println(response);
+                if (logging) {
+                    logFile.write(response);
+                    logFile.flush();
+                }
                 output.writeBytes(response);
                 
                 byte[] fileData = new byte[(int) requestedFile.length()];
@@ -140,20 +214,18 @@ class ClientHandler implements Runnable {
                                     "Date: " + df.format(date) + "\r\n" +
                                     "Content-Type: text/plain\r\n" +
                                     "Content-Length: " + clientOutput.length() + "\r\n" +
-                                    "Connection: close\r\n\r\n";
+                                    "Connection: keep-alive\r\n\r\n";
                 System.out.println(response);
+                if (logging) {
+                    logFile.write(response);
+                    logFile.flush();
+                }
                 output.writeBytes(response);
                 output.writeBytes(clientOutput);
                 output.flush();
             }
-            //connectionSocket.close();
         } 
-        catch(IOException e) {
-        	e.printStackTrace();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        catch(IOException e) {}
+        catch (Exception e) {}
     }
-
 }
