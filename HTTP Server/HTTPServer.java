@@ -16,6 +16,9 @@ class HTTPServer {
                     switch(args[i]) {
                         case "-p": 
                             port = Integer.parseInt(args[i+1]);
+                            if (port <= 0) {
+                                throw new NumberFormatException();
+                            }
                             break;
                         case "-docroot": 
                             docRoot = args[i+1];
@@ -111,14 +114,11 @@ class ClientHandler implements Runnable {
             
             String[] getLine;
             String filePath = "";
+
             if(requestLines[0].contains("GET") && requestLines[0].contains("HTTP/1.1")) {
                 getLine = requestLines[0].split(" ");
                 filePath = docRoot + getLine[1];
-            } else {    
-                System.out.println(requestLines[0]);
-                if (requestLines[0] == null) {
-                    System.out.println("its null, apparently");
-                }
+            } else {
                 // Errors for non-implemented response headers
             	String clientOutput = "The functionality you are trying to use is not implemented by this server. (These are not the droids you're looking for)";
                 String response =   "HTTP/1.1 501 Not Implemented\r\n" +
@@ -134,7 +134,6 @@ class ClientHandler implements Runnable {
                 output.writeBytes(response);
                 output.writeBytes(clientOutput);
                 output.flush();
-                //connectionSocket.close();
                 return;
             }
 
@@ -171,7 +170,7 @@ class ClientHandler implements Runnable {
                 output.writeBytes(clientOutput);
                 output.flush();
                 connectionSocket.close();
-                //break;
+                return;
             }
             
             File requestedFile = new File(filePath);
@@ -184,9 +183,37 @@ class ClientHandler implements Runnable {
                 	// Unsupported File Type
                 }
                 
+                Date fileModDate = new Date(requestedFile.lastModified());
+                System.out.println("file mod: " + df.format(fileModDate));
+
+                for (i=0; i<requestLines.length; i++) {
+                    if(requestLines[i].contains("If-Modified-Since:")) {
+
+                        String dateString = requestLines[i].substring(19);
+                        Date requestModDate = df.parse(dateString);
+
+                        if (!fileModDate.after(requestModDate)) {
+                            String response = "HTTP/1.1 304 Not Modified\r\n"
+                                            + "Date: " + df.format(date) + "\r\n"
+                                            + "Connection: keep-alive\r\n\r\n";
+
+                                System.out.println(response);
+                                if (logging) {
+                                    logFile.write(response);
+                                    logFile.flush();
+                                }
+                                output.writeBytes(response);
+                                output.flush();
+                                return;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
                 String response = "HTTP/1.1 200 OK\r\n"
                 				+ "Date: " + df.format(date) + "\r\n"
-                				+ "Last-Modified: " + df.format(new Date(requestedFile.lastModified())) + "\r\n" 
+                				+ "Last-Modified: " + df.format(fileModDate) + "\r\n" 
                 				+ "Content-Type: " + contentType + "\r\n" 
                 				+ "Content-Length: " + requestedFile.length() + "\r\n"
                                 + "Connection: keep-alive\r\n\r\n";
