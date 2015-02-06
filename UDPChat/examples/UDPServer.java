@@ -20,7 +20,7 @@ class UDPServer {
             
             boolean existingClient = false;
             for (ConnectedClient client: clientList) {
-                if (client.getIP() == ipAddress && client.getPort() == port) {
+                if (client.getIP().equals(ipAddress) && client.getPort() == port) {
                     existingClient = true;
                     break;
                 }
@@ -31,9 +31,18 @@ class UDPServer {
                 clientList.add(newClient);
                 System.out.printf("New Client Connected! IP: %s Port: %d\n",ipAddress.getHostAddress(), port);
             }
+            for (int j=0; j<clientList.size(); j++) {
+                System.out.printf("Client %d: IP: %s Port: %d\n", j, clientList.get(j).getIP().getHostAddress(), clientList.get(j).getPort());
+            }
 
             if (message.equals("/exit")) {
-                //remove client
+                int i=0;
+                while (i<clientList.size() &&
+                        !clientList.get(i).getIP().equals(ipAddress) &&
+                        clientList.get(i).getPort() != port) {
+                    i++;
+                }
+                clientList.remove(i);
                 System.out.printf("Client Exited! IP: %s Port: %d\n",ipAddress.getHostAddress(), port);
             }
 
@@ -42,13 +51,18 @@ class UDPServer {
 
             for (ConnectedClient client : clientList) {
                 //send to all other clients
-                if (client.getIP() != ipAddress || client.getPort() != port) {
+                if (!client.getIP().equals(ipAddress) || client.getPort() != port) {
                     DatagramPacket sendPacket = 
                         new DatagramPacket(sendData,sendData.length,client.getIP(), client.getPort());
                     serverSocket.send(sendPacket);
+                    System.out.printf("Sent to %s:%d\n",client.getIP().getHostAddress(),client.getPort());
                 }
             }
-            
+            String successMessage = "(message sent)";
+            sendData = successMessage.getBytes();
+            DatagramPacket successPacket =
+                new DatagramPacket(sendData,sendData.length,ipAddress,port);
+            serverSocket.send(successPacket);
         }
     }
 }

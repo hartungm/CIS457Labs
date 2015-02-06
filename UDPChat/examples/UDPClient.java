@@ -3,6 +3,8 @@ import java.net.*;
 
 class UDPClient {
     public static void main (String[] args) throws Exception {
+        while(true) {
+            //for ours, we need a try/catch based random port solution to set our port, so the server can identify where to send the messages
         DatagramSocket clientSocket = new DatagramSocket();
         clientSocket.setSoTimeout(5000);
         BufferedReader inFromUser = 
@@ -28,5 +30,7 @@ class UDPClient {
         }
         String serverMessage = new String(receivePacket.getData());
         System.out.println("Got from server: " + serverMessage);
+        System.out.println("From port: " + receivePacket.getPort());
+    }
     }
 }
