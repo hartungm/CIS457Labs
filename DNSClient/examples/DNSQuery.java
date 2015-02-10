@@ -33,8 +33,8 @@ class DNSQuery {
             d.writeBytes(label);
         }
         d.writeByte(0);
-        d.writeByte(TYPE_A);
-        d.writeByte(CLASS_IN);
+        d.writeShort(TYPE_A);
+        d.writeShort(CLASS_IN);
         d.flush();
         byte[] sendData = b.toByteArray();
         InetAddress ipAddress = InetAddress.getByName("8.8.8.8");
