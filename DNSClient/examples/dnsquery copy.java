@@ -5,7 +5,7 @@ import java.util.Random;
 class dnsquery {
 	public static final short CLASS_IN = 1;
 	public static final short TYPE_A = 1;
-	public static void main(String[] args) throws Exception {
+	public static void main(String args[]) throws Exception {
 		DatagramSocket clientSocket = new DatagramSocket();
 		clientSocket.setSoTimeout(5000);
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
@@ -37,20 +37,7 @@ class dnsquery {
 		d.writeShort(CLASS_IN);
 		d.flush();
 		byte[] sendData = b.toByteArray();
-		if(args.length == 0) {
-			BufferedReader fileStream = new BufferedReader(new FileInputStream("/etc/resolv.conf"));
-			String tempString;
-			while(tempString = fileStream.readLine != -1) {
-				String[] tempStringArray = tempString.split(" ");
-				if(tempStringArray[0].equals("nameserver"))
-				{
-					InetAddress IPAddress = InetAddress.getByName(tempStringArray[1]);
-				}
-			}
-		}
-		else {
-			InetAddress IPAddress = InetAddress.getByName(args[0]);
-		}
+		InetAddress IPAddress = InetAddress.getByName("8.8.8.8");
 		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData, length, IPAddress, 53);
 		clientSocket.send(sendPacket);
 		System.out.println("Sent our query");
