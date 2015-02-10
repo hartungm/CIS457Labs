@@ -32,10 +32,6 @@ class UDPServer {
                 clientList.add(newClient);
                 System.out.printf("New Client Connected! IP: %s Port: %d\n\n",ipAddress.getHostAddress(), port);
             }
-            //for (int j=0; j<clientList.size(); j++) {
-            //    System.out.printf("Client %d: IP: %s Port: %d\n", j, clientList.get(j).getIP().getHostAddress(), clientList.get(j).getPort());
-            //}
-			//System.out.println("\n");
 
             if (message.equals("/exit")) {
                 int i=0;
