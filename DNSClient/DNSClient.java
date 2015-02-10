@@ -1,5 +1,5 @@
-import java.io.*
-import java.net.*
+import java.io.*;
+import java.net.*;
 import java.util.Random;
 
 class DNSClient {
@@ -7,19 +7,20 @@ class DNSClient {
 	public static final short TYPE_A = 1;
 	
 	public static void main(String[] args) throws Exception {
+        InetAddress IPAddress = null;
 		if(args.length == 0) {
-			BufferedReader fileStream = new BufferedReader(new FileInputStream("/etc/resolv.conf"));
+			BufferedReader fileStream = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/resolv.conf")));
 			String tempString;
-			while(tempString = fileStream.readLine != -1) {
+			while((tempString = fileStream.readLine()) != null) {
 				String[] tempStringArray = tempString.split(" ");
 				if(tempStringArray[0].equals("nameserver"))
 				{
-					InetAddress IPAddress = InetAddress.getByName(tempStringArray[1]);
+					IPAddress = InetAddress.getByName(tempStringArray[1]);
 				}
 			}
 		}
 		else {
-			InetAddress IPAddress = InetAddress.getByName(args[0]);
+			IPAddress = InetAddress.getByName(args[0]);
 		}
 		
 		DatagramSocket clientSocket = new DatagramSocket();
@@ -62,7 +63,7 @@ class DNSClient {
 		d.flush();
 		
 		byte[] sendData = b.toByteArray();
-		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData, length, IPAddress, 53);
+		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 53);
 		clientSocket.send(sendPacket);
 		System.out.println("Sent our query");
 		
@@ -74,6 +75,7 @@ class DNSClient {
 		catch(SocketTimeoutException e) {
 			System.err.println("Request Timed Out");
 		}
-		
+		String responseData = new String(recvPacket.getData());
+        System.out.println(recvPacket.getData());
 	}
 }
