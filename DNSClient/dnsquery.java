@@ -7,7 +7,7 @@ class dnsquery {
 	public static final short TYPE_A = 1;
 	public static void main(String[] args) throws Exception {
 		DatagramSocket clientSocket = new DatagramSocket();
-		clientSocket.setSoTimeout(5000);
+		clientSocket.setSoTimeout(2000);
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		System.out.println("Enter a domain name: ");
 		String domain = inFromUser.readLine();
@@ -54,5 +54,11 @@ class dnsquery {
 		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData, length, IPAddress, 53);
 		clientSocket.send(sendPacket);
 		System.out.println("Sent our query");
+		try {
+
+		}
+		catch(SocketTimeoutException e) {
+			System.err.println("Request Timed Out");
+		}
 	}
 }
