@@ -7,7 +7,7 @@ class DNSQuery {
     public static final short TYPE_A = 1;
     public static void main(String args[]) throws Exception {
         DatagramSocket clientSocket = new DatagramSocket();
-        clientSocket.setSoTimeout(5000);
+        clientSocket.setSoTimeout(2000);
         BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Enter a domain name: ");
         String domain = inFromUser.readLine();
@@ -42,5 +42,9 @@ class DNSQuery {
         //Port 53 is convention for DNS servers
         clientSocket.send(sendPacket);
         System.out.println("Sent our query");
+        byte[] recvData = new byte[1024];
+        try {
+            DatagramPacket recvPacket = new DatagramPacket(recvData, recvData.length);
+        } catch
     }
 }

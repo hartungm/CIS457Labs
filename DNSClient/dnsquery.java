@@ -54,8 +54,10 @@ class dnsquery {
 		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData, length, IPAddress, 53);
 		clientSocket.send(sendPacket);
 		System.out.println("Sent our query");
-		try {
-
+		byte[] recvData = new byte[1024];
+        DatagramPacket recvPacket = new DatagramPacket(recvData, recvData.length);
+        try {
+            clientSocket.receive(recvPacket);
 		}
 		catch(SocketTimeoutException e) {
 			System.err.println("Request Timed Out");
