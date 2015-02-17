@@ -74,8 +74,127 @@ class DNSClient {
 		}
 		catch(SocketTimeoutException e) {
 			System.err.println("Request Timed Out");
+			return;
 		}
-		String responseData = new String(recvPacket.getData());
-        System.out.println(recvPacket.getData());
+		
+		ByteArrayInputStream byteIn = new ByteArrayInputStream(recvData);
+		DataInputStream dataIn = new DataInputStream(byteIn);
+		
+		int currentPosition = 0;
+		
+		id = dataIn.readShort();
+		System.out.println("\nHEADER INFO:\nID: " + id);
+		
+		flags = dataIn.readShort();
+		
+		qcount = dataIn.readShort();
+		System.out.println("qcount: " + qcount);
+		
+		ancount = dataIn.readShort();
+		System.out.println("ancount: " + ancount);
+		
+		authcount = dataIn.readShort();
+		System.out.println("authcount: " + authcount);
+		
+		addcount = dataIn.readShort();
+		System.out.println("addcount: " + addcount);
+		
+		currentPosition += 12;
+		
+		System.out.println("\nQUESTION:");
+		
+		int length = 0;
+		byte[] name;
+		String fullName = "";
+		do {
+			length = dataIn.readByte();
+			name = new byte[length];
+			
+			byteIn.read(name);
+			fullName = fullName + new String(name) + ".";
+			
+			currentPosition += length + 1;
+		} while(length > 0);
+		
+		fullName = fullName.substring(0, fullName.length() - 2);
+		
+		System.out.println("qname: " + fullName);
+		
+		short qtype = dataIn.readShort();
+		System.out.println("qtype: " + qtype);
+		
+		short qclass = dataIn.readShort();
+		System.out.println("qclass: " + qclass);
+		
+		currentPosition += 4;
+		
+		System.out.println("\nANSWER:");
+		fullName = "";
+		
+		length = dataIn.readByte();
+		currentPosition += 1;
+		
+		if(length < 0) {
+			dataIn.reset();
+			dataIn.skipBytes(currentPosition - 1);
+			
+			length = dataIn.readShort();
+			currentPosition += 1;
+			length &= 0x0003FFF;
+			
+			dataIn.reset();
+			dataIn.skipBytes(length);
+			
+			int l;
+			do {
+				l = dataIn.readByte();
+				name = new byte[l];
+				byteIn.read(name);
+				fullName += new String(name) + ".";
+			} while(l > 0);
+			
+			dataIn.reset();
+			dataIn.skipBytes(currentPosition);
+		} else {
+			dataIn.reset();
+			currentPosition -= 1;
+			dataIn.skip(currentPosition);
+			
+			int l;
+			do {
+				l = dataIn.readByte();
+				name = new byte[l];
+				byteIn.read(name);
+				fullName += new String(name) + ".";
+			} while(l > 0);
+		}
+		
+		fullName = fullName.substring(0, fullName.length() - 2);
+		System.out.println(fullName);
+		
+		short type = dataIn.readShort();
+		System.out.println("Type: " + type);
+		
+		short classs = dataIn.readShort();
+		System.out.println("Class: " + classs);
+		
+		int ttl = dataIn.readInt();
+		System.out.println("TTL: " + ttl);
+		
+		short rdlength = dataIn.readShort();
+		System.out.println("rdlength: " + rdlength);
+		
+		String ipAddress = "";
+		byte num = dataIn.readByte();
+		ipAddress += (0xFF&num) + ".";
+		num = dataIn.readByte();
+		ipAddress += (0xFF&num) + ".";
+		num = dataIn.readByte();
+		ipAddress += (0xFF&num) + ".";
+		num = dataIn.readByte();
+		ipAddress += (0xFF&num);
+		
+		System.out.println("rdata: " + ipAddress);
+		
 	}
 }
