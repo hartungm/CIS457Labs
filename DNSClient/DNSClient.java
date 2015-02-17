@@ -129,8 +129,22 @@ class DNSClient {
 		currentPosition += 4;
 		
 		System.out.println("\nANSWER(S):");
+		currentPosition = printInfo(ancount, dataIn, byteIn, currentPosition);
 		
-		for(int i = 0; i < ancount; i++)
+		System.out.println("\nAUTHORITY:");
+		currentPosition = printInfo(authcount, dataIn, byteIn, currentPosition);
+		
+		System.out.println("\nADDITIONAL:");
+		currentPosition = printInfo(addcount, dataIn, byteIn, currentPosition);
+		
+	}
+	
+	public static int printInfo(short count, DataInputStream dataIn, ByteArrayInputStream byteIn, int currentPosition) throws IOException {
+		String fullName = "";
+		int length = 0;
+		byte[] name = null;
+		
+		for(int i = 0; i < count; i++)
 		{
 			fullName = "";
 		
@@ -203,5 +217,7 @@ class DNSClient {
 			System.out.println("rdata: " + ipAddress);
 			System.out.println("\n");
 		}
+		
+		return currentPosition;
 	}
 }
