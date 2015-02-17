@@ -128,7 +128,7 @@ class DNSClient {
 		
 		currentPosition += 4;
 		
-		System.out.println("\nANSWER:");
+		System.out.println("\nANSWER(S):");
 		
 		for(int i = 0; i < ancount; i++)
 		{
@@ -197,6 +197,8 @@ class DNSClient {
 			ipAddress += (0xFF&num) + ".";
 			num = dataIn.readByte();
 			ipAddress += (0xFF&num);
+			
+			currentPosition += 14;
 			
 			System.out.println("rdata: " + ipAddress);
 			System.out.println("\n");
