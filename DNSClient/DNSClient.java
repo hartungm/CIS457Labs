@@ -129,17 +129,17 @@ class DNSClient {
 		currentPosition += 4;
 		
 		System.out.println("\nANSWER(S):");
-		currentPosition = printInfo(ancount, dataIn, byteIn, currentPosition);
+		currentPosition = printInfo(ancount, dataIn, byteIn, currentPosition, true);
 		
 		System.out.println("\nAUTHORITY:");
-		currentPosition = printInfo(authcount, dataIn, byteIn, currentPosition);
+		currentPosition = printInfo(authcount, dataIn, byteIn, currentPosition, false);
 		
 		System.out.println("\nADDITIONAL:");
-		currentPosition = printInfo(addcount, dataIn, byteIn, currentPosition);
+		currentPosition = printInfo(addcount, dataIn, byteIn, currentPosition, true);
 		
 	}
 	
-	public static int printInfo(short count, DataInputStream dataIn, ByteArrayInputStream byteIn, int currentPosition) throws IOException {
+	public static int printInfo(short count, DataInputStream dataIn, ByteArrayInputStream byteIn, int currentPosition, boolean isIpAddress) throws IOException {
 		String fullName = "";
 		int length = 0;
 		byte[] name = null;
@@ -202,19 +202,65 @@ class DNSClient {
 			short rdlength = dataIn.readShort();
 			System.out.println("rdlength: " + rdlength);
 			
-			String ipAddress = "";
-			byte num = dataIn.readByte();
-			ipAddress += (0xFF&num) + ".";
-			num = dataIn.readByte();
-			ipAddress += (0xFF&num) + ".";
-			num = dataIn.readByte();
-			ipAddress += (0xFF&num) + ".";
-			num = dataIn.readByte();
-			ipAddress += (0xFF&num);
+			if(isIpAddress) {
+				String ipAddress = "";
+				byte num = dataIn.readByte();
+				ipAddress += (0xFF&num) + ".";
+				num = dataIn.readByte();
+				ipAddress += (0xFF&num) + ".";
+				num = dataIn.readByte();
+				ipAddress += (0xFF&num) + ".";
+				num = dataIn.readByte();
+				ipAddress += (0xFF&num);
+				
+				currentPosition += 14;
+				
+				System.out.println("rdata: " + ipAddress);
+			} else {
+				length = dataIn.readByte();
+				currentPosition += 1;
+
+				if(length < 0) {
+					dataIn.reset();
+					dataIn.skipBytes(currentPosition - 1);
+					
+					length = dataIn.readShort();
+					currentPosition += 1;
+					length &= 0x0003FFF;
+					
+					dataIn.reset();
+					dataIn.skipBytes(length);
+					
+					int l;
+					do {
+						l = dataIn.readByte();
+						l &= 0x00000FF;
+						name = new byte[l];
+						byteIn.read(name);
+						fullName += new String(name) + ".";
+					} while(l > 0);
+					
+					dataIn.reset();
+					dataIn.skipBytes(currentPosition);
+				} else {
+					dataIn.reset();
+					currentPosition -= 1;
+					dataIn.skip(currentPosition);
+					
+					int l;
+					do {
+						l = dataIn.readByte();
+						name = new byte[l];
+						byteIn.read(name);
+						fullName += new String(name) + ".";
+					} while(l > 0);
+				}
+				
+				fullName = fullName.substring(0, fullName.length() - 2);
+				System.out.println("rdata: " + fullName);
+			}
 			
-			currentPosition += 14;
 			
-			System.out.println("rdata: " + ipAddress);
 			System.out.println("\n");
 		}
 		
