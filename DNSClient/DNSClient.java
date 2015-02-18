@@ -181,6 +181,7 @@ class DNSClient {
 				int l;
 				do {
 					l = dataIn.readByte();
+					l &= 0xFF;
 					name = new byte[l];
 					byteIn.read(name);
 					fullName += new String(name) + ".";
