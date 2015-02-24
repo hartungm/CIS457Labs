@@ -1,8 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-//this Java will be a little different than normal...
-//...because Kalafut hates Java and everything it stands for.
 
 class UDPClient {
     public static void main(String args[]) throws Exception {
