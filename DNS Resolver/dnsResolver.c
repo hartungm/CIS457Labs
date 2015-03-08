@@ -9,11 +9,12 @@
 
 uint16_t convertBytesToShort(unsigned char high, unsigned char low);
 void convertShortToBytes(uint16_t shortVal, unsigned char charArray[]);
+void findAddressForRequest(unsigned char packet[], int packetSize);
 
 int main(int argc, char* argv[])
 {
 	int portNum;
-	struct sockaddr_in resolverAddr, dnsAddr;
+	struct sockaddr_in resolverAddr, dnsAddr, clientaddr;
 	// Command line arguments
 	if(argc > 1)
 	{
@@ -42,12 +43,24 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		unsigned int length = sizeof(resolverAddr);
+		unsigned int length = sizeof(clientaddr);
 		unsigned char packet[MAX_PACKET_SIZE];
-		recvfrom(socketfd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &resolverAddr, &length);
+		printf("Made it here!\n");
+		recvfrom(socketfd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &clientaddr, &length);
+		printf("Received packet!\n");
 		packet[2] &= 0xfe;
 		sendto(dnsSocketFd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &dnsAddr, sizeof(dnsAddr));
-		
+		unsigned int dnsLength = sizeof(dnsAddr);
+		recvfrom(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, &dnsLength);
+		uint16_t anCount = convertBytesToShort(packet[7], packet[6]);
+		if(anCount > 1)
+		{
+			findAddressForRequest(packet, MAX_PACKET_SIZE);
+		}
+		else
+		{
+
+		}
 		// uint16_t id = convertBytesToShort(packet[1], packet[0]);
 		// uint16_t flags = convertBytesToShort(packet[3], packet[2]);
 		// flags &= 0xfeff;
@@ -56,6 +69,11 @@ int main(int argc, char* argv[])
 		// uint16_t nsCount = convertBytesToShort(packet[9], packet[8]);
 		// uint16_t arCount = convertBytesToShort(packet[11], packet[10]);
 	}
+}
+
+void findAddressForRequest(unsigned char packet[], int packetSize)
+{
+
 }
 
 uint16_t convertBytesToShort(unsigned char high, unsigned char low)
