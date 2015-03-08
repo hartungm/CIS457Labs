@@ -53,14 +53,7 @@ int main(int argc, char* argv[])
 		unsigned int dnsLength = sizeof(dnsAddr);
 		recvfrom(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, &dnsLength);
 		uint16_t anCount = convertBytesToShort(packet[7], packet[6]);
-		if(anCount > 1)
-		{
-			findAddressForRequest(packet, MAX_PACKET_SIZE);
-		}
-		else
-		{
-
-		}
+		findAddressForRequest(packet, MAX_PACKET_SIZE);
 		// uint16_t id = convertBytesToShort(packet[1], packet[0]);
 		// uint16_t flags = convertBytesToShort(packet[3], packet[2]);
 		// flags &= 0xfeff;
@@ -73,7 +66,19 @@ int main(int argc, char* argv[])
 
 void findAddressForRequest(unsigned char packet[], int packetSize)
 {
-
+	uint16_t anCount = convertBytesToShort(packet[7], packet[6])
+	if(anCount == 1)
+	{
+		sendto(socketfd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
+	}
+	else
+	{
+		uint16_t nsCount = convertBytesToShort(packet[9], packet[8]);
+		if(nsCount > 0)
+		{
+			
+		}
+	}
 }
 
 uint16_t convertBytesToShort(unsigned char high, unsigned char low)
