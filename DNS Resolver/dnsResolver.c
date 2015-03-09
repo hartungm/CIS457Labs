@@ -50,9 +50,11 @@ int main(int argc, char* argv[])
 		recvfrom(socketfd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &clientaddr, &length);
 		printf("Received packet!\n");
 		packet[2] &= 0xfe;
-		sendto(dnsSocketFd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &dnsAddr, sizeof(dnsAddr));
-		unsigned int dnsLength = sizeof(dnsAddr);
+		sendto(dnsSocketFd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &dnsAddr, sizeof(struct sockaddr_in));
+		unsigned int dnsLength = sizeof(struct sockaddr_in);
+        printf("dnslength %d\n", dnsLength);
 		recvfrom(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, &dnsLength);
+        printf("after receive from, into findAddress");
 		findAddressForRequest(packet, MAX_PACKET_SIZE);
 		// uint16_t id = convertBytesToShort(packet[1], packet[0]);
 		// uint16_t flags = convertBytesToShort(packet[3], packet[2]);
@@ -69,11 +71,13 @@ void findAddressForRequest(unsigned char packet[], int packetSize)
 	uint16_t anCount = convertBytesToShort(packet[7], packet[6]);
 	if(anCount == 1)
 	{
+        printf("anCount == 1");
 		sendto(socketfd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
 	}
 	else
 	{
 		uint16_t nsCount = convertBytesToShort(packet[9], packet[8]);
+        printf("nscount: %d", nsCount);
 		if(nsCount > 0)
 		{
 
