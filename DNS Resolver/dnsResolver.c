@@ -6,6 +6,8 @@
 #include <stdlib.h>
 
 #define MAX_PACKET_SIZE 512
+#define ANSWER_RECORD_SIZE 32
+#define QUESTION_RECORD_SIZE 32
 
 uint16_t convertBytesToShort(unsigned char high, unsigned char low);
 void convertShortToBytes(uint16_t shortVal, unsigned char charArray[]);
@@ -54,7 +56,7 @@ int main(int argc, char* argv[])
 		unsigned int dnsLength = sizeof(struct sockaddr_in);
         printf("dnslength %d\n", dnsLength);
 		recvfrom(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, &dnsLength);
-        printf("after receive from, into findAddress");
+        printf("after receive from, into findAddress\n");
 		findAddressForRequest(packet, MAX_PACKET_SIZE);
 		// uint16_t id = convertBytesToShort(packet[1], packet[0]);
 		// uint16_t flags = convertBytesToShort(packet[3], packet[2]);
@@ -69,7 +71,7 @@ int main(int argc, char* argv[])
 void findAddressForRequest(unsigned char packet[], int packetSize)
 {
 	uint16_t anCount = convertBytesToShort(packet[7], packet[6]);
-	if(anCount == 1)
+	if(anCount > 0)
 	{
         printf("anCount == 1");
 		sendto(socketfd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
@@ -80,7 +82,24 @@ void findAddressForRequest(unsigned char packet[], int packetSize)
         printf("nscount: %d", nsCount);
 		if(nsCount > 0)
 		{
-
+			// uint16_t qdCount = convertBytesToShort(packet[5], packet[4]);
+			// int startingPointInByteArray = qdCount * QUESTION_RECORD_SIZE + anCount * ANSWER_RECORD_SIZE;
+			// int i = 0;
+			// for(i = 0; i < nsCount; i++)
+			// {
+			// 	char *ipAddress = malloc(sizeof(char * 16));
+			// 	ipAddress = packet[startingPointInByteArray + i * 4];
+			// 	strcat(ipAddress, ".");
+			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 1]);
+			// 	strcat(ipAddress, ".");
+			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 2]);
+			// 	strcat(ipAddress, ".");
+			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 3]);
+			// 	struct sockaddr_in newAddr;
+			// 	newAddr.sin_family = AF_INET;
+			// 	newAddr.sin_port = htons(53);
+			// 	inet_aton(ipAddress, &newAddr.sin_addr);
+			// }
 		}
 	}
 }
