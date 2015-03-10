@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4CB91C751AAD1E250062CA4E"
+               BlueprintIdentifier = "4C7C88201AAE679B000F213A"
                BuildableName = "dnsResolver"
                BlueprintName = "dnsResolver"
                ReferencedContainer = "container:dnsResolver.xcodeproj">
@@ -32,7 +32,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4CB91C751AAD1E250062CA4E"
+            BlueprintIdentifier = "4C7C88201AAE679B000F213A"
             BuildableName = "dnsResolver"
             BlueprintName = "dnsResolver"
             ReferencedContainer = "container:dnsResolver.xcodeproj">
@@ -51,7 +51,7 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4CB91C751AAD1E250062CA4E"
+            BlueprintIdentifier = "4C7C88201AAE679B000F213A"
             BuildableName = "dnsResolver"
             BlueprintName = "dnsResolver"
             ReferencedContainer = "container:dnsResolver.xcodeproj">
@@ -69,7 +69,7 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4CB91C751AAD1E250062CA4E"
+            BlueprintIdentifier = "4C7C88201AAE679B000F213A"
             BuildableName = "dnsResolver"
             BlueprintName = "dnsResolver"
             ReferencedContainer = "container:dnsResolver.xcodeproj">
