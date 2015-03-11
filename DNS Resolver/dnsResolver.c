@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define MAX_PACKET_SIZE 512
 #define ANSWER_RECORD_SIZE 32
@@ -11,7 +12,7 @@
 
 uint16_t convertBytesToShort(unsigned char high, unsigned char low);
 void convertShortToBytes(uint16_t shortVal, unsigned char charArray[]);
-void findAddressForRequest(unsigned char packet[], int packetSize);
+int findAddressForRequest(unsigned char packet[], int packetSize);
 struct sockaddr_in resolverAddr, dnsAddr, clientaddr;
 int socketfd, dnsSocketFd;
 
@@ -75,13 +76,14 @@ int main(int argc, char* argv[])
 	}
 }
 
-void findAddressForRequest(unsigned char packet[], int packetSize)
+int findAddressForRequest(unsigned char packet[], int packetSize)
 {
 	uint16_t anCount = convertBytesToShort(packet[7], packet[6]);
 	if(anCount > 0)
 	{
 		printf("anCount == 1");
 		sendto(socketfd, packet, (sizeof(unsigned char) * 512), 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
+		return 0;
 	}
 	else
 	{
@@ -89,26 +91,70 @@ void findAddressForRequest(unsigned char packet[], int packetSize)
 		printf("nscount: %d\n", nsCount);
 		if(nsCount > 0)
 		{
-			// uint16_t qdCount = convertBytesToShort(packet[5], packet[4]);
-			// int startingPointInByteArray = qdCount * QUESTION_RECORD_SIZE + anCount * ANSWER_RECORD_SIZE;
-			// int i = 0;
-			// for(i = 0; i < nsCount; i++)
-			// {
-			// 	char *ipAddress = malloc(sizeof(char * 16));
-			// 	ipAddress = packet[startingPointInByteArray + i * 4];
-			// 	strcat(ipAddress, ".");
-			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 1]);
-			// 	strcat(ipAddress, ".");
-			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 2]);
-			// 	strcat(ipAddress, ".");
-			// 	strcat(ipAddress, packet[startingPointInByteArray + i * 4 + 3]);
-			// 	struct sockaddr_in newAddr;
-			// 	newAddr.sin_family = AF_INET;
-			// 	newAddr.sin_port = htons(53);
-			// 	inet_aton(ipAddress, &newAddr.sin_addr);
-			// }
+			int i = 12;
+			while(packet[i] != '\0') // Walk through question name
+			{
+				i++;
+			}
+			i += 5;
+			int theCount = 0;
+			while(theCount < nsCount)
+			{
+				while(packet[i] != '\0') // walks through answer name
+				{
+					if((packet[i] & 0xc0) == 0xc0)
+					{
+						
+					}
+					i++;
+				}
+				i += 8;
+				uint16_t rdLength = convertBytesToShort(packet[i + 1], packet[i]);
+				rdLength &= 0x3fff;
+				int j = i;
+				int index = 0;
+				char newRequest[rdLength];
+				while(i < rdLength + j)
+				{
+					if((packet[i] & 0xc0) == 0xc0)
+					{
+						uint16_t pointer = convertBytesToShort(packet[i + 1], packet[i]);
+						pointer &= 0x3fff;
+						pointer++;
+						int numChars = packet[pointer];
+						int endPoint = numChars + pointer;
+						while(pointer < endPoint)
+						{
+							newRequest[index] = packet[pointer];
+							pointer++;
+						}
+					}
+					if(isdigit(packet[i]))
+					{
+						newRequest[index] = '.';
+					}
+					else
+					{
+						newRequest[index] = packet[i];
+					}
+					i++;
+					index++;
+				}
+				dnsAddr.sin_family = AF_INET;
+				dnsAddr.sin_port = htons(53);
+				inet_aton(newRequest, &dnsAddr.sin_addr);
+				sendto(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, sizeof(struct sockaddr_in));
+				unsigned int dnsLength = sizeof(dnsAddr);
+				recvfrom(dnsSocketFd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr*) &dnsAddr, &dnsLength);
+				if(!findAddressForRequest(packet, MAX_PACKET_SIZE))
+				{
+					return 0;
+				}
+			}
+			
 		}
 	}
+	return -1;
 }
 
 uint16_t convertBytesToShort(unsigned char low, unsigned char high)
