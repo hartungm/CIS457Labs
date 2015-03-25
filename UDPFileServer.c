@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEADER_LENGTH 2
+#define HEADER_LENGTH 8
 #define ACK_MESSAGE_SIZE 4
 
 int main (int argc, char **argv)
@@ -15,7 +15,7 @@ int main (int argc, char **argv)
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_port = htons(9876);
     serveraddr.sin_addr.s_addr = INADDR_ANY;
-    char fileNotFound[] = { 0x00, 0x00 };
+    char fileNotFound[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     size_t fnfSize = sizeof(fileNotFound);
 
     bind(sockfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
@@ -45,9 +45,9 @@ int main (int argc, char **argv)
             fseek(fp, 0L, SEEK_SET);
             if(size < 1024)
             {
-                char fileBytes[(size + 2)];
-                fileBytes[0] = 0x01;
-                fileBytes[1] = 0x01;
+                char fileBytes[(size + 8)];
+                fileBytes[3] = 0x01;
+                fileBytes[7] = 0x01;
                 int result = fputs(fileBytes, fp);
                 if(result == EOF)
                 {
