@@ -3,9 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
+#include <unistd.h>
 
 #define HEADER_LENGTH 8
 #define ACK_MESSAGE_SIZE 4
+#define MAX_PACKET_SIZE 1024
+
+char* convertIntToByteArray(int num);
 
 int main (int argc, char **argv)
 {
@@ -40,10 +45,11 @@ int main (int argc, char **argv)
         else
         {
             fseek(fp, 0L, SEEK_END);
-            long size = ftell(fp);
-            size += HEADER_LENGTH;
+            long byteSize = ftell(fp);
+            long size;
+            size = HEADER_LENGTH + byteSize;
             fseek(fp, 0L, SEEK_SET);
-            if(size < 1024)
+            if(size < MAX_PACKET_SIZE)
             {
                 char fileBytes[(size + 8)];
                 fileBytes[3] = 0x01;
@@ -63,9 +69,27 @@ int main (int argc, char **argv)
                     printf("Ack response received!\n");
                 }
             }
-            else 
+            else
             {
-
+                int numPackets = (int) ceil(byteSize / MAX_PACKET_SIZE);
+                char packets[numPackets][MAX_PACKET_SIZE];
+                int i;
+                for(i = 0; i < numPackets; i++)
+                {
+                    int numBytesToRead = MAX_PACKET_SIZE - HEADER_LENGTH;
+                    char* packetNum = convertIntToByteArray(i);
+                    char* numPacketsByteArray = convertIntToByteArray(numPackets);
+                    packets[i][0] = numPacketsByteArray[0];
+                    packets[i][1] = numPacketsByteArray[1];
+                    packets[i][2] = numPacketsByteArray[2];
+                    packets[i][3] = numPacketsByteArray[3];
+                    packets[i][4] = packetNum[0];
+                    packets[i][5] = packetNum[1];
+                    packets[i][6] = packetNum[2];
+                    packets[i][7] = packetNum[3];
+                    // char packetBytes[numBytesToRead];
+                    read(fp,(void *) packets[i][8], numBytesToRead);
+                }
             }
         }
         
@@ -75,4 +99,14 @@ int main (int argc, char **argv)
     }
 
     return 0;
+}
+
+char* convertIntToByteArray(int num)
+{
+    char bytes[4];
+    bytes[0] = (num >> 24) & 0xFF;
+    bytes[1] = (num >> 16) & 0xFF;
+    bytes[2] = (num >> 8) & 0xFF;
+    bytes[3] = num & 0xFF;
+    return bytes;
 }
