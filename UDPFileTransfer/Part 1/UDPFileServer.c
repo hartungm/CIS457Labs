@@ -34,7 +34,7 @@ int main (int argc, char **argv)
         printf("File requested: %s\n",line);
         
         FILE *fp;
-        fp = fopen( strcat("./", line), "r");
+        fp = fopen( line, "r");
 
         if (fp == NULL)
         {
@@ -88,7 +88,7 @@ int main (int argc, char **argv)
                     packets[i][6] = packetNum[2];
                     packets[i][7] = packetNum[3];
                     // char packetBytes[numBytesToRead];
-                    read(fp,(void *) packets[i][8], numBytesToRead);
+                    fread((void *) &packets[i][8], 1, numBytesToRead, fp);
                 }
             }
         }
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
 
 char* convertIntToByteArray(int num)
 {
-    char bytes[4];
+    char* bytes = malloc(sizeof(char) * 4);
     bytes[0] = (num >> 24) & 0xFF;
     bytes[1] = (num >> 16) & 0xFF;
     bytes[2] = (num >> 8) & 0xFF;
