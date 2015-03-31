@@ -69,7 +69,8 @@ int main (int argc, char **argv)
                 char fileBytes[(size + 8)];
                 fileBytes[3] = 0x01;
                 fileBytes[7] = 0x01;
-                int result = fputs(fileBytes, fp);
+
+                int result =  fread((void *) &fileBytes[8], sizeof(char), MAX_PACKET_SIZE - #HEADER_LENGTH, fp);
                 if(result == EOF)
                 {
                     printf("Error in writing file to Array!\n");
@@ -103,7 +104,7 @@ int main (int argc, char **argv)
                     packets[i][5] = packetNum[1];
                     packets[i][6] = packetNum[2];
                     packets[i][7] = packetNum[3];
-                    fread((void *) &packets[i][8], 1, numBytesToRead, fp);
+                    fread((void *) &packets[i][8], sizeof(char), numBytesToRead, fp);
                     free(packetNum);
                     free(numPacketsByteArray);
                 }
