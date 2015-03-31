@@ -17,6 +17,8 @@ typedef struct
 {
     int packetNum;
     char* packet;
+    int sockfd;
+    struct sockaddr_in* addr;
 } packetInfo;
 
 char* convertIntToByteArray(int num);
@@ -110,16 +112,13 @@ int main (int argc, char **argv)
                     packetInfo pInfo;
                     pInfo.packetNum = i;
                     pInfo.packet = packets[i];
+                    pInfo.sockfd = sockfd;
+                    pInfo.addr = &clientaddr;
                     pthread_create(&threads[i], NULL, sendPacketToClient, &pInfo);
                 }
             }
         }
-        
-        //here have more code
-        //Split file up into packet-sized chunks
-        //Send file via sliding window
     }
-
     return 0;
 }
 
@@ -137,6 +136,15 @@ void* sendPacketToClient(void* args)
 {
     sem_wait(&semaphore);
     // Put code for send and wait for acknowledgement here
+    packetInfo* pInfo = (packetInfo*)args;
+    char* packet = pInfo->packet;
+    int packetNum = pInfo->packetNum;
+    int sockfd = pInfo->sockfd;
+    struct sockaddr_in* clientaddr = pInfo->addr;
+    //here we need to grab the socket and addr somehow...put it in the struct?
+    sendto(sockfd,packet,strlen(packet),0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+
+    //then here receive from the client the acknowledgement
     sem_post(&semaphore);
     return 0;
 }
