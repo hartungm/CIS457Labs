@@ -1,0 +1,14 @@
+
+erver.c: In function ‘sendPacketToClient’:
+UDPFileServer.c:141:9: warning: unused variable ‘packetNum’ [-Wunused-variable]
+     int packetNum = pInfo->packetNum;
+              ^
+              /tmp/cc4FGrmx.o: In function `main':
+              UDPFileServer.c:(.text+0x34a): undefined reference to `ceil'
+              UDPFileServer.c:(.text+0x639): undefined reference to `sem_init'
+              UDPFileServer.c:(.text+0x6c2): undefined reference to `pthread_create'
+              /tmp/cc4FGrmx.o: In function `sendPacketToClient':
+              UDPFileServer.c:(.text+0x753): undefined reference to `sem_wait'
+              UDPFileServer.c:(.text+0x7c2): undefined reference to `sem_post'
+              collect2: error: ld returned 1 exit status
+
