@@ -9,6 +9,7 @@
 #include <sys/sem.h>
 #include <semaphore.h>
 
+#define ACK_TYPE 2
 #define HEADER_LENGTH 8
 #define ACK_MESSAGE_SIZE 4
 #define MAX_PACKET_SIZE 1024
@@ -135,16 +136,20 @@ char* convertIntToByteArray(int num)
 void* sendPacketToClient(void* args)
 {
     sem_wait(&semaphore);
-    // Put code for send and wait for acknowledgement here
     packetInfo* pInfo = (packetInfo*)args;
     char* packet = pInfo->packet;
-    int packetNum = pInfo->packetNum;
+    //int packetNum = pInfo->packetNum;
     int sockfd = pInfo->sockfd;
     struct sockaddr_in* clientaddr = pInfo->addr;
-    //here we need to grab the socket and addr somehow...put it in the struct?
-    sendto(sockfd,packet,strlen(packet),0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-
-    //then here receive from the client the acknowledgement
-    sem_post(&semaphore);
+    sendto(sockfd, packet, strlen(packet), 0, (struct sockaddr*)&clientaddr, sizeof(clientaddr));
+    
+    char ackMessage[ACK_MESSAGE_SIZE];
+    unsigned int len = sizeof(clientaddr);
+    int result = recvfrom(sockfd, ackMessage, ACK_MESSAGE_SIZE, 0, (struct sockaddr*) &clientaddr, &len);
+    
+    if (result > 0 && ackMessage[0] == ACK_TYPE)
+    {
+       sem_post(&semaphore);
+    }
     return 0;
 }
