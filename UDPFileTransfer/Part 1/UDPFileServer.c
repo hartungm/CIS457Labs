@@ -117,7 +117,7 @@ int main (int argc, char **argv)
                     packets[i][5] = packetNum[1];
                     packets[i][6] = packetNum[2];
                     packets[i][7] = packetNum[3];
-                    fread((void *) &packets[i][8], 1, numBytesToRead, fp);
+                    fread((void *) &packets[i][8], sizeof(char), numBytesToRead, fp);
                     free(packetNum);
                     free(numPacketsByteArray);
                 }
