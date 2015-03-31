@@ -5,12 +5,24 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/sem.h>
+#include <semaphore.h>
 
 #define HEADER_LENGTH 8
 #define ACK_MESSAGE_SIZE 4
 #define MAX_PACKET_SIZE 1024
 
+typedef struct
+{
+    int packetNum;
+    char* packet;
+} packetInfo;
+
 char* convertIntToByteArray(int num);
+void* sendPacketToClient(void* args);
+
+sem_t semaphore;
 
 int main (int argc, char **argv)
 {
@@ -74,6 +86,7 @@ int main (int argc, char **argv)
                 int numPackets = (int) ceil(byteSize / MAX_PACKET_SIZE);
                 char packets[numPackets][MAX_PACKET_SIZE];
                 int i;
+                pthread_t threads[numPackets];
                 for(i = 0; i < numPackets; i++)
                 {
                     int numBytesToRead = MAX_PACKET_SIZE - HEADER_LENGTH;
@@ -87,8 +100,17 @@ int main (int argc, char **argv)
                     packets[i][5] = packetNum[1];
                     packets[i][6] = packetNum[2];
                     packets[i][7] = packetNum[3];
-                    // char packetBytes[numBytesToRead];
                     fread((void *) &packets[i][8], 1, numBytesToRead, fp);
+                    free(packetNum);
+                    free(numPacketsByteArray);
+                }
+                sem_init(&semaphore, 0, 5);
+                for(i = 0; i < numPackets; i++)
+                {
+                    packetInfo pInfo;
+                    pInfo.packetNum = i;
+                    pInfo.packet = packets[i];
+                    pthread_create(&threads[i], NULL, sendPacketToClient, &pInfo);
                 }
             }
         }
@@ -109,4 +131,12 @@ char* convertIntToByteArray(int num)
     bytes[2] = (num >> 8) & 0xFF;
     bytes[3] = num & 0xFF;
     return bytes;
+}
+
+void* sendPacketToClient(void* args)
+{
+    sem_wait(&semaphore);
+    // Put code for send and wait for acknowledgement here
+    sem_post(&semaphore);
+    return 0;
 }
