@@ -1,5 +1,7 @@
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -52,9 +54,9 @@ int main(int argc, char** argv){
 		packetBuffer[i].totalPackets = -1;
 	}
 	
-	int len = sizeof(struct sockaddr_in);
+	unsigned int len = sizeof(struct sockaddr_in);
 	int packetWriteIndex = 0;
-	FILE *fp = fopen("/home/carlton/Desktop/test.txt", "w");
+	FILE *fp = fopen("/Users/Michael/Desktop/test.txt", "w");
 	
 	do {
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
@@ -78,7 +80,7 @@ int main(int argc, char** argv){
 		}
 		
 		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-		int packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
+		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 		
 		printf("%d, %d\n", packetWriteIndex, tempPacket.totalPackets);
 	} while(packetWriteIndex < tempPacket.totalPackets);
@@ -128,18 +130,8 @@ void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, sock
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp) {
 	
 	int i;
-	
-	int poo;
-	for(poo = 0; poo < 1024; poo++) {
-		printf("%d - %c\n", poo, buffer[0].data[poo]);
-	}
-	
-	printf("%d\n", lastPacketIndex);
-// 	fwrite(buffer[0].data + HEADER_SIZE, sizeof(char), 1024 - HEADER_SIZE, fp);
 	for(i = 0; i < bufferSize; i++) {
 		if(buffer[i].packetIndex == lastPacketIndex) {
-			printf("wrote %d\n", i);
-			printf("packetindex %d\n", buffer[i].packetIndex);
 			fwrite(buffer[i].data + HEADER_SIZE, sizeof(char), 1024 - HEADER_SIZE, fp);
 			
 			buffer[i].totalPackets = -1;
