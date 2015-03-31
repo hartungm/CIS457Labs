@@ -16,7 +16,7 @@ struct Packet {
 
 int readInt(char *startIndex);
 int addToBuffer(struct Packet packet, struct Packet *buffer, int bufferSize);
-void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen)
+void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen);
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp);
 
 int main(int argc, char** argv){
@@ -80,7 +80,7 @@ int main(int argc, char** argv){
 		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 		int packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 		
-		
+		printf("%d, %d\n", packetWriteIndex, tempPacket.totalPackets);
 	} while(packetWriteIndex < tempPacket.totalPackets);
 	
 
@@ -128,8 +128,18 @@ void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, sock
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp) {
 	
 	int i;
+	
+	int poo;
+	for(poo = 0; poo < 1024; poo++) {
+		printf("%d - %c\n", poo, buffer[0].data[poo]);
+	}
+	
+	printf("%d\n", lastPacketIndex);
+// 	fwrite(buffer[0].data + HEADER_SIZE, sizeof(char), 1024 - HEADER_SIZE, fp);
 	for(i = 0; i < bufferSize; i++) {
 		if(buffer[i].packetIndex == lastPacketIndex) {
+			printf("wrote %d\n", i);
+			printf("packetindex %d\n", buffer[i].packetIndex);
 			fwrite(buffer[i].data + HEADER_SIZE, sizeof(char), 1024 - HEADER_SIZE, fp);
 			
 			buffer[i].totalPackets = -1;

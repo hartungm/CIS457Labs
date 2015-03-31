@@ -48,12 +48,16 @@ int main (int argc, char **argv)
         recvfrom(sockfd,line,5000,0,(struct sockaddr*)&clientaddr,&len);
         printf("File requested: %s\n",line);
         
+		char trimmedLine[strlen(line+1)];
+		strcpy(trimmedLine, line+1);
+		printf("%i", (int)sizeof(trimmedLine));
         FILE *fp;
-        fp = fopen( line, "r");
+//         fp = fopen(trimmedLine, "r");
+		fp = fopen("test.txt", "r");
 
         if (fp == NULL)
         {
-            printf("File Not Found");
+            printf("File Not Found\n");
             sendto(sockfd,fileNotFound,fnfSize,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
             continue;
         }
@@ -67,15 +71,25 @@ int main (int argc, char **argv)
             if(size < MAX_PACKET_SIZE)
             {
                 char fileBytes[(size + 8)];
+				fileBytes[0] = 0x00;
+				fileBytes[1] = 0x00;
+				fileBytes[2] = 0x00;
                 fileBytes[3] = 0x01;
-                fileBytes[7] = 0x01;
-                int result = fputs(fileBytes, fp);
-                if(result == EOF)
+				fileBytes[4] = 0x00;
+				fileBytes[5] = 0x00;
+				fileBytes[6] = 0x00;
+                fileBytes[7] = 0x00;
+                int result = fread((void *)&fileBytes[8], sizeof(char), MAX_PACKET_SIZE - HEADER_LENGTH, fp);
+                int poo;
+				for(poo = 0; poo < 1024; poo++) {
+					printf("%d - %i\n", poo, (int)fileBytes[poo]);
+				}
+				if(result == EOF)
                 {
                     printf("Error in writing file to Array!\n");
                     exit(1);
                 }
-                size_t fileSize = sizeof(fileBytes);
+                size_t fileSize = 1024;
                 sendto(sockfd, fileBytes, fileSize, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
                 char ackMessage[ACK_MESSAGE_SIZE];
                 result = recvfrom(sockfd, ackMessage, ACK_MESSAGE_SIZE, 0, (struct sockaddr*) &clientaddr, &len);
