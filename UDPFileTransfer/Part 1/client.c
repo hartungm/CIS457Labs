@@ -16,7 +16,7 @@ struct Packet {
 
 int readInt(char *startIndex);
 int addToBuffer(struct Packet packet, struct Packet *buffer, int bufferSize);
-void sendAck();
+void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen)
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp);
 
 int main(int argc, char** argv){
@@ -66,13 +66,18 @@ int main(int argc, char** argv){
 		tempPacket.totalPackets = readInt(tempPacket.data);
 		tempPacket.packetIndex = readInt(tempPacket.data + 4);
 		
+		if(tempPacket.totalPackets == 0 && tempPacket.packetIndex == 0) {
+			printf("The server couldn't find the file.\n");
+			return 1;
+		}
+		
 		int added = addToBuffer(tempPacket, packetBuffer, BUFFER_SIZE);
 		if(added == 0) {
 			printf("The packet buffer overflowed!!\n");
 			return 1;
 		}
 		
-		sendAck();
+		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 		int packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 		
 		
