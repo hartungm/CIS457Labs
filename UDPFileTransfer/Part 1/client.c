@@ -44,12 +44,25 @@ int main(int argc, char** argv){
 	char filePath[1024];
 	filePath[0] = REQUEST_TYPE;
 	fgets(filePath + 1, 1023, stdin);
+	int i = 0;
+	int foundNull = 0;
+	for(i = 0; i < 1024; i++)
+	{
+		if(foundNull)
+		{
+			filePath[i] = 0x00;
+		}
+		if(!foundNull && filePath[i] == '\0')
+		{
+			foundNull = 1;
+
+		}
+	}
 	
-	sendto(sockfd, filePath, strlen(filePath), 0, (struct sockaddr*)&serveraddr, sizeof(struct sockaddr_in));
+	sendto(sockfd, filePath, strlen(filePath) + 1, 0, (struct sockaddr*)&serveraddr, sizeof(struct sockaddr_in));
 	
 	struct Packet packetBuffer[BUFFER_SIZE];
 	struct Packet tempPacket;
-	int i;
 	for(i = 0; i < BUFFER_SIZE; i++) {
 		packetBuffer[i].totalPackets = -1;
 	}

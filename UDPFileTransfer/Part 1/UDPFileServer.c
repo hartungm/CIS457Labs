@@ -47,13 +47,27 @@ int main (int argc, char **argv)
         printf("Waiting for a file request...");
         recvfrom(sockfd,line,5000,0,(struct sockaddr*)&clientaddr,&len);
         printf("File requested: %s\n",line);
-        
-		char trimmedLine[strlen(line+1)];
-		strcpy(trimmedLine, line+1);
-		printf("%i", (int)sizeof(trimmedLine));
+        int nullIndex = 0;
+        int j = 0;
+        while(nullIndex == 0 && j < 5000)
+        {
+            if(line[j] == '\n')
+            {
+                line[j] = '\0';
+                printf("Found\n");
+                nullIndex = j;
+            }
+            j++;
+        }
+        char trimmedLine[nullIndex + 1];
+        for(j = 0; j < nullIndex + 1; j++)
+        {
+            trimmedLine[j] = line[j];
+        }
+        printf("%s\n", trimmedLine);
         FILE *fp;
-//         fp = fopen(trimmedLine, "r");
-		fp = fopen("test.txt", "r");
+        fp = fopen(trimmedLine+1, "r");
+		//fp = fopen("test.txt", "r");
 
         if (fp == NULL)
         {
