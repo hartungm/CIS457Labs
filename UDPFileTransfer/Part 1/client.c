@@ -44,32 +44,19 @@ int main(int argc, char** argv){
 	char filePath[1024];
 	filePath[0] = REQUEST_TYPE;
 	fgets(filePath + 1, 1023, stdin);
-	int i = 0;
-	int foundNull = 0;
-	for(i = 0; i < 1024; i++)
-	{
-		if(foundNull)
-		{
-			filePath[i] = 0x00;
-		}
-		if(!foundNull && filePath[i] == '\0')
-		{
-			foundNull = 1;
-
-		}
-	}
 	
 	sendto(sockfd, filePath, strlen(filePath) + 1, 0, (struct sockaddr*)&serveraddr, sizeof(struct sockaddr_in));
 	
 	struct Packet packetBuffer[BUFFER_SIZE];
 	struct Packet tempPacket;
+	int i;
 	for(i = 0; i < BUFFER_SIZE; i++) {
 		packetBuffer[i].totalPackets = -1;
 	}
 	
 	unsigned int len = sizeof(struct sockaddr_in);
 	int packetWriteIndex = 0;
-	FILE *fp = fopen("/Users/Michael/Desktop/test.txt", "w");
+	FILE *fp = fopen("/home/carlton/Desktop/test.png", "w");
 	
 	do {
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
@@ -95,7 +82,7 @@ int main(int argc, char** argv){
 		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 		
-		printf("%d, %d\n", packetWriteIndex, tempPacket.totalPackets);
+		printf("%d, %d\n", tempPacket.packetIndex, tempPacket.totalPackets);
 	} while(packetWriteIndex < tempPacket.totalPackets);
 	
 
@@ -137,6 +124,7 @@ void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, sock
 	ackPacket[3] = (char)(packetIndex & 0x0000FF00) >> 8;
 	ackPacket[4] = (char)(packetIndex & 0x000000FF);
 	
+	printf("sending ack...%d, %d\n",packetIndex, readInt(ackPacket + 1));
 	sendto(sockfd, ackPacket, 5, 0, dest_addr, addrlen);
 }
 
