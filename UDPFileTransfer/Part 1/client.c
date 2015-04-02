@@ -81,8 +81,7 @@ int main(int argc, char** argv){
 		
 		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
-		
-		printf("%d, %d\n", tempPacket.packetIndex, tempPacket.totalPackets);
+
 	} while(packetWriteIndex < tempPacket.totalPackets);
 	
 
@@ -124,7 +123,7 @@ void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, sock
 	ackPacket[3] = (char)(packetIndex & 0x0000FF00) >> 8;
 	ackPacket[4] = (char)(packetIndex & 0x000000FF);
 	
-	printf("sending ack...%d, %d\n",packetIndex, readInt(ackPacket + 1));
+	printf("sending ack...%d\n",packetIndex);
 	sendto(sockfd, ackPacket, 5, 0, dest_addr, addrlen);
 }
 

@@ -9,7 +9,7 @@
 
 #define ACK_TYPE 2
 #define HEADER_LENGTH 8
-#define ACK_MESSAGE_SIZE 4
+#define ACK_MESSAGE_SIZE 5
 #define MAX_PACKET_SIZE 1024
 
 typedef struct {
@@ -67,7 +67,7 @@ int main (int argc, char **argv)
 			if(fileSize < MAX_PACKET_SIZE - HEADER_LENGTH) {
 				totalPackets = 1;
 			} else {
-				totalPackets = (int) ceil(fileSize / (MAX_PACKET_SIZE - HEADER_LENGTH));
+				totalPackets = (int) ceil(fileSize / (MAX_PACKET_SIZE - HEADER_LENGTH)) + 1;
 			}
 			
 			AckThreadInfo ackThreadInfo;
@@ -97,8 +97,6 @@ int main (int argc, char **argv)
 				}
 				else {
 					//*** Handle lost packets here ***//
-					printf("Packet out of order\n");
-					break;
 				}
 			}
 			sleep(1);
@@ -148,16 +146,15 @@ void* ackListener(void *args) {
 	unsigned int len = sizeof(*clientAddr);
 	
 	int i;
-	while(lastAckIndex < totalPackets) {
+	while(lastAckIndex < totalPackets - 1) {
 		char ackMessage[ACK_MESSAGE_SIZE];
 		
 		int result = recvfrom(sockfd, ackMessage, ACK_MESSAGE_SIZE, 0, (struct sockaddr*) &clientAddr, &len);
 		
-		printf("Recieved ack...%d, %d, %d, %d, %d\n", (int)ackMessage[0], (int)ackMessage[1], (int)ackMessage[2], (int)ackMessage[3], (int)ackMessage[4]);
 		if(result > 0) {
 			if(ackMessage[0] == ACK_TYPE) {
 				int ackIndex = readInt(ackMessage + 1);
-				printf("Ack response received! - %d, %d\n", ackIndex, lastAckIndex);
+				printf("Ack response received! - %d\n", ackIndex);
 				
 				if(ackIndex == lastAckIndex + 1) {
 					lastAckIndex++;
