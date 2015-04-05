@@ -6,11 +6,13 @@
 #include <math.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #define ACK_TYPE 2
 #define HEADER_LENGTH 8
 #define ACK_MESSAGE_SIZE 5
 #define MAX_PACKET_SIZE 1024
+#define SLIDING_WINDOW_SIZE 5
 
 typedef struct {
 	int totalPackets;
@@ -64,9 +66,12 @@ int main (int argc, char **argv)
             fseek(fp, 0L, SEEK_SET);
 			
 			int totalPackets;
-			if(fileSize < MAX_PACKET_SIZE - HEADER_LENGTH) {
+			if(fileSize < MAX_PACKET_SIZE - HEADER_LENGTH) 
+			{
 				totalPackets = 1;
-			} else {
+			} 
+			else 
+			{
 				totalPackets = (int) ceil(fileSize / (MAX_PACKET_SIZE - HEADER_LENGTH)) + 1;
 			}
 			
@@ -78,24 +83,50 @@ int main (int argc, char **argv)
 			pthread_t ackThread;
 			pthread_create(&ackThread, NULL, ackListener, &ackThreadInfo);
 			sleep(1);
-			//***  MATT - You might need this to handle packet loss. ***//
-			//char packetBuffer[5][MAX_PACKET_SIZE];
+
+			// Packet Loss Control Variables
+			char packetBuffer[SLIDING_WINDOW_SIZE][MAX_PACKET_SIZE];
+			time_t sendTimes[SLIDING_WINDOW_SIZE];
 			
 			int packetIndex = 0;
-			while(packetIndex < totalPackets) {
-				if(packetIndex < lastAckIndex + 5) {
+			while(packetIndex < totalPackets) 
+			{
+				int packetMod;
+				// Check to Make sure no packets are over there timeout time
+				for(packetMod = 0; packetMod < SLIDING_WINDOW_SIZE; packetMod++)
+				{
+					if(sendTimes[packetMod] < time(NULL) + 2)
+					{
+						printf("Packet Timeout! Sending another!\n");
+						sendto(sockfd, packetBuffer[packetMod], 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
+					}	
+				}
+				if(packetIndex < lastAckIndex + SLIDING_WINDOW_SIZE) 
+				{
 					char packet[MAX_PACKET_SIZE];
 					writeIntToPacket(totalPackets, packet);
 					writeIntToPacket(packetIndex, packet + 4);
 					
 					int dataLength = fread(packet + 8, sizeof(char), MAX_PACKET_SIZE - HEADER_LENGTH, fp);
-					if(dataLength == 0) {
+					if(dataLength == 0) 
+					{
 						printf("Error reading from file\n");
 					}
 					sendto(sockfd, packet, 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
 					packetIndex++;
+
+					// Add the packet to the buffer and send time arrays, 
+					// because we have a sliding window size of 5 no packet
+					// should ever be overwritten that is still in use
+					int i;
+					for(i = 0; i < MAX_PACKET_SIZE; i++)
+					{
+						packetBuffer[packetIndex % SLIDING_WINDOW_SIZE][i] = packet[i];
+					}
+					sendTimes[packetIndex % SLIDING_WINDOW_SIZE] = time(NULL);
 				}
-				else {
+				else 
+				{
 					//*** Handle lost packets here ***//
 				}
 			}
@@ -105,19 +136,21 @@ int main (int argc, char **argv)
     return 0;
 }
 
-void trimFileName(char *str, int length) {
-	
+void trimFileName(char *str, int length) 
+{	
 	int j = 0;
-	for(j = 0; j < length; j++) {
-		if(str[j] == '\n') {
+	for(j = 0; j < length; j++) 
+	{
+		if(str[j] == '\n') 
+		{
 			str[j] = '\0';
 			break;
 		}
 	}
 }
 
-void writeIntToPacket(int num, char *packet) {
-    
+void writeIntToPacket(int num, char *packet) 
+{    
     packet[0] = (num >> 24) & 0xFF;
     packet[1] = (num >> 16) & 0xFF;
     packet[2] = (num >> 8) & 0xFF;
@@ -125,8 +158,8 @@ void writeIntToPacket(int num, char *packet) {
     return;
 }
 
-int readInt(char *startIndex) {
-	
+int readInt(char *startIndex) 
+{	
 	int result = 0;
 	
 	result = (int)startIndex[0] << 24;
@@ -137,8 +170,8 @@ int readInt(char *startIndex) {
 	return result;
 }
 
-void* ackListener(void *args) {
-	
+void* ackListener(void *args) 
+{
 	AckThreadInfo *info = (AckThreadInfo*)args;
 	int totalPackets = info->totalPackets;
 	int sockfd = info->sockfd;
@@ -146,39 +179,52 @@ void* ackListener(void *args) {
 	unsigned int len = sizeof(*clientAddr);
 	
 	int i;
-	while(lastAckIndex < totalPackets - 1) {
+	while(lastAckIndex < totalPackets - 1) 
+	{
 		char ackMessage[ACK_MESSAGE_SIZE];
 		
 		int result = recvfrom(sockfd, ackMessage, ACK_MESSAGE_SIZE, 0, (struct sockaddr*) &clientAddr, &len);
 		
-		if(result > 0) {
-			if(ackMessage[0] == ACK_TYPE) {
+		if(result > 0) 
+		{
+			if(ackMessage[0] == ACK_TYPE) 
+			{
 				int ackIndex = readInt(ackMessage + 1);
 				printf("Ack response received! - %d\n", ackIndex);
 				
-				if(ackIndex == lastAckIndex + 1) {
+				if(ackIndex == lastAckIndex + 1) 
+				{
 					lastAckIndex++;
 					
-					for(i = 0; i < sizeof(ackBuffer); i++) {
-						if(ackBuffer[i] == lastAckIndex + 1) {
+					for(i = 0; i < sizeof(ackBuffer); i++) 
+					{
+						if(ackBuffer[i] == lastAckIndex + 1) 
+						{
 							lastAckIndex++;
 							ackBuffer[i] = 0;
 							i = -1;
 						}
 					}
 				} 
-				else if(ackIndex > lastAckIndex && ackIndex <= lastAckIndex + 5) {
-					for(i = 0; i < sizeof(ackBuffer); i++) {
-						if(ackBuffer[i] == 0) {
+				else if(ackIndex > lastAckIndex && ackIndex <= lastAckIndex + 5) 
+				{
+					for(i = 0; i < sizeof(ackBuffer); i++) 
+					{
+						if(ackBuffer[i] == 0) 
+						{
 							ackBuffer[i] = ackIndex;
 							break;
 						}
 					}
 				}
-			} else {
+			} 
+			else 
+			{
 				printf("Invalid packet.\n");
 			}
-		} else {
+		} 
+		else 
+		{
 			printf("Socket timed out.\n");
 		}
 	}
