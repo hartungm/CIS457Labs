@@ -13,6 +13,7 @@
 #define ACK_MESSAGE_SIZE 5
 #define MAX_PACKET_SIZE 1024
 #define SLIDING_WINDOW_SIZE 5
+#define MAX_TIME 0x7fffffffffffffff
 
 typedef struct {
 	int totalPackets;
@@ -86,7 +87,7 @@ int main (int argc, char **argv)
 
 			// Packet Loss Control Variables
 			char packetBuffer[SLIDING_WINDOW_SIZE][MAX_PACKET_SIZE];
-			time_t sendTimes[SLIDING_WINDOW_SIZE];
+			time_t sendTimes[SLIDING_WINDOW_SIZE] = { MAX_TIME, MAX_TIME, MAX_TIME, MAX_TIME , MAX_TIME };
 			
 			int packetIndex = 0;
 			while(packetIndex < totalPackets) 
