@@ -13,6 +13,7 @@
 struct Packet {
 	int totalPackets;
 	int packetIndex;
+    int dataSize;
 	char data[1024];
 };
 
@@ -56,7 +57,7 @@ int main(int argc, char** argv){
 	
 	unsigned int len = sizeof(struct sockaddr_in);
 	int packetWriteIndex = 0;
-	FILE *fp = fopen("/home/carlton/Desktop/test.png", "w");
+	FILE *fp = fopen("/home/matt/Desktop/test.png", "w");
 	
 	do {
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
@@ -73,6 +74,7 @@ int main(int argc, char** argv){
 			return 1;
 		}
 		
+        tempPacket.dataSize = n - HEADER_SIZE;
 		int added = addToBuffer(tempPacket, packetBuffer, BUFFER_SIZE);
 		if(added == 0) {
 			printf("The packet buffer overflowed!!\n");
@@ -132,8 +134,7 @@ int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE
 	int i;
 	for(i = 0; i < bufferSize; i++) {
 		if(buffer[i].packetIndex == lastPacketIndex) {
-			fwrite(buffer[i].data + HEADER_SIZE, sizeof(char), 1024 - HEADER_SIZE, fp);
-			
+			fwrite(buffer[i].data + HEADER_SIZE, sizeof(char), buffer[i].dataSize, fp);
 			buffer[i].totalPackets = -1;
 			return lastPacketIndex + 1;
 		}

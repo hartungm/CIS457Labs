@@ -107,13 +107,13 @@ int main (int argc, char **argv)
 					char packet[MAX_PACKET_SIZE];
 					writeIntToPacket(totalPackets, packet);
 					writeIntToPacket(packetIndex, packet + 4);
-					
-					int dataLength = fread(packet + 8, sizeof(char), MAX_PACKET_SIZE - HEADER_LENGTH, fp);
+                    int dataSize = (packetIndex+1)==totalPackets ? fileSize%(MAX_PACKET_SIZE - HEADER_LENGTH) : (MAX_PACKET_SIZE - HEADER_LENGTH);
+					int dataLength = fread(packet + 8, sizeof(char), dataSize, fp);
 					if(dataLength == 0) 
 					{
 						printf("Error reading from file\n");
 					}
-					sendto(sockfd, packet, 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
+					sendto(sockfd, packet, dataSize + HEADER_LENGTH, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
 					packetIndex++;
 
 					// Add the packet to the buffer and send time arrays, 
