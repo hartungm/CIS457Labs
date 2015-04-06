@@ -96,11 +96,11 @@ int main (int argc, char **argv)
 				// Check to Make sure no packets are over there timeout time
 				for(packetMod = 0; packetMod < SLIDING_WINDOW_SIZE; packetMod++)
 				{
-					if(sendTimes[packetMod] < time(NULL) + 2)
+					if((time(NULL) - sendTimes[packetMod]) > 2)
 					{
 						printf("Packet Timeout! Sending another!\n");
 						sendto(sockfd, packetBuffer[packetMod], 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
-					}	
+                    }	
 				}
 				if(packetIndex < lastAckIndex + SLIDING_WINDOW_SIZE) 
 				{
