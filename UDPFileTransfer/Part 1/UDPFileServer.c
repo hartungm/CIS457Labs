@@ -9,7 +9,7 @@
 #include <time.h>
 
 #define ACK_TYPE 2
-#define HEADER_LENGTH 8
+#define HEADER_LENGTH 12
 #define ACK_MESSAGE_SIZE 5
 #define MAX_PACKET_SIZE 1024
 #define SLIDING_WINDOW_SIZE 5
@@ -23,6 +23,7 @@ typedef struct {
 
 void trimFileName(char *str, int length);
 void writeIntToPacket(int num, char *packet);
+int getChecksum(char *packet, int packetLength);
 char* convertIntToByteArray(int num);
 void* ackListener(void *args);
 
@@ -98,17 +99,19 @@ int main (int argc, char **argv)
 				{
 					if((time(NULL) - sendTimes[packetMod]) > 2)
 					{
-						printf("Packet Timeout! Sending another!\n");
+// 						printf("Packet Timeout! Sending another!\n");
 						sendto(sockfd, packetBuffer[packetMod], 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
                     }	
 				}
 				if(packetIndex < lastAckIndex + SLIDING_WINDOW_SIZE) 
 				{
 					char packet[MAX_PACKET_SIZE];
-					writeIntToPacket(totalPackets, packet);
-					writeIntToPacket(packetIndex, packet + 4);
+					writeIntToPacket(totalPackets, packet + 4);
+					writeIntToPacket(packetIndex, packet + 8);
                     int dataSize = (packetIndex+1)==totalPackets ? fileSize%(MAX_PACKET_SIZE - HEADER_LENGTH) : (MAX_PACKET_SIZE - HEADER_LENGTH);
-					int dataLength = fread(packet + 8, sizeof(char), dataSize, fp);
+					int dataLength = fread(packet + 12, sizeof(char), dataSize, fp);
+                    
+                    writeIntToPacket(getChecksum(packet + 4, dataSize), packet);
 					if(dataLength == 0) 
 					{
 						printf("Error reading from file\n");
@@ -159,14 +162,26 @@ void writeIntToPacket(int num, char *packet)
     return;
 }
 
+int getChecksum(char *packet, int packetLength) {
+    
+    int checksum = 0;
+    
+    int i = 0;
+    for(i = 0; i < packetLength - 4; i++) {
+        checksum += (int)packet[i];
+    }
+    
+    return checksum;
+}
+
 int readInt(char *startIndex) 
 {	
 	int result = 0;
 	
-	result = (int)startIndex[0] << 24;
-	result |= (int)startIndex[1] << 16;
-	result |= (int)startIndex[2] << 8;
-	result |= (int)startIndex[3];
+	result = (unsigned char)startIndex[0] << 24;
+	result |= (unsigned char)startIndex[1] << 16;
+	result |= (unsigned char)startIndex[2] << 8;
+	result |= (unsigned char)startIndex[3];
 	
 	return result;
 }

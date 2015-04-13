@@ -7,7 +7,7 @@
 
 #define REQUEST_TYPE 1
 #define ACK_TYPE 2
-#define HEADER_SIZE 8
+#define HEADER_SIZE 12
 #define BUFFER_SIZE 10
 
 struct Packet {
@@ -19,6 +19,7 @@ struct Packet {
 
 int readInt(char *startIndex);
 int addToBuffer(struct Packet packet, struct Packet *buffer, int bufferSize);
+int getChecksum(char *packet, int packetLength);
 void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen);
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp);
 
@@ -57,7 +58,7 @@ int main(int argc, char** argv){
 	
 	unsigned int len = sizeof(struct sockaddr_in);
 	int packetWriteIndex = 0;
-	FILE *fp = fopen("test.png", "w");
+	FILE *fp = fopen("/home/carlton/Desktop/test.png", "w");
 	
 	do {
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
@@ -65,9 +66,9 @@ int main(int argc, char** argv){
 			printf("Sorry, had a problem receiving a response from the server.\n");
 			return 1;
 		}
-		
-		tempPacket.totalPackets = readInt(tempPacket.data);
-		tempPacket.packetIndex = readInt(tempPacket.data + 4);
+        
+		tempPacket.totalPackets = readInt(tempPacket.data + 4);
+		tempPacket.packetIndex = readInt(tempPacket.data + 8);
 		
 		if(tempPacket.totalPackets == 0 && tempPacket.packetIndex == 0) {
 			printf("The server couldn't find the file.\n");
@@ -75,13 +76,18 @@ int main(int argc, char** argv){
 		}
 		
         tempPacket.dataSize = n - HEADER_SIZE;
-		int added = addToBuffer(tempPacket, packetBuffer, BUFFER_SIZE);
-		if(added == 0) {
-			printf("The packet buffer overflowed!!\n");
-			return 1;
-		}
-		
-		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+        
+        int checksum = readInt(tempPacket.data);
+        if(checksum == getChecksum(tempPacket.data + 4, tempPacket.dataSize)) {
+            int added = addToBuffer(tempPacket, packetBuffer, BUFFER_SIZE);
+            if(added == 0) {
+                printf("The packet buffer overflowed!!\n");
+                return 1;
+            }
+            
+            sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+        }
+        
 		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 
 	} while(packetWriteIndex < tempPacket.totalPackets);
@@ -94,10 +100,10 @@ int readInt(char *startIndex) {
 	
 	int result = 0;
 	
-	result = (int)startIndex[0] << 24;
-	result |= (int)startIndex[1] << 16;
-	result |= (int)startIndex[2] << 8;
-	result |= (int)startIndex[3];
+	result = (unsigned char)startIndex[0] << 24;
+    result |= (unsigned char)startIndex[1] << 16;
+    result |= (unsigned char)startIndex[2] << 8;
+    result |= (unsigned char)startIndex[3];
 	
 	return result;
 }
@@ -115,15 +121,27 @@ int addToBuffer(struct Packet packet, struct Packet *buffer, int bufferSize) {
 	return 0;
 }
 
+int getChecksum(char *packet, int packetLength) {
+    
+    unsigned int checksum = 0;
+    
+    int i = 0;
+    for(i = 0; i < packetLength - 4; i++) {
+        checksum += (int)packet[i];
+    }
+   
+    return checksum;
+}
+
 void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen) {
 	
 	char ackPacket[5];
 	
 	ackPacket[0] = ACK_TYPE;
-	ackPacket[1] = (char)(packetIndex & 0xFF000000) >> 24;
-	ackPacket[2] = (char)(packetIndex & 0x00FF0000) >> 16;
-	ackPacket[3] = (char)(packetIndex & 0x0000FF00) >> 8;
-	ackPacket[4] = (char)(packetIndex & 0x000000FF);
+    ackPacket[1] = (packetIndex >> 24) & 0xFF;
+    ackPacket[2] = (packetIndex >> 16) & 0xFF;
+    ackPacket[3] = (packetIndex >> 8) & 0xFF;
+    ackPacket[4] = packetIndex & 0xFF;
 	
 	printf("sending ack...%d\n",packetIndex);
 	sendto(sockfd, ackPacket, 5, 0, dest_addr, addrlen);
