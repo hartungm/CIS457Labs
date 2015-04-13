@@ -37,7 +37,7 @@ int main(int argc, char** argv){
 	struct sockaddr_in serveraddr;
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(9876);
-	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serveraddr.sin_addr.s_addr = inet_addr("10.0.0.2");
 
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
 
@@ -50,9 +50,11 @@ int main(int argc, char** argv){
 	
 	struct Packet packetBuffer[BUFFER_SIZE];
 	struct Packet tempPacket;
+    tempPacket.totalPackets = 9999;
 	int i;
 	for(i = 0; i < BUFFER_SIZE; i++) {
 		packetBuffer[i].totalPackets = -1;
+        packetBuffer[i].packetIndex = -1;
 	}
 	
 	unsigned int len = sizeof(struct sockaddr_in);
@@ -60,6 +62,12 @@ int main(int argc, char** argv){
 	FILE *fp = fopen("test.png", "w");
 	
 	do {
+		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
+        printf("packetWriteIndex: %d", packetWriteIndex);
+        if (packetWriteIndex >= tempPacket.totalPackets)
+        {
+            break;
+        }
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
 		if(n < 0){
 			printf("Sorry, had a problem receiving a response from the server.\n");
@@ -82,7 +90,6 @@ int main(int argc, char** argv){
 		}
 		
 		sendAck(tempPacket.packetIndex, sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-		packetWriteIndex = writePacket(packetBuffer, BUFFER_SIZE, packetWriteIndex, fp);
 
 	} while(packetWriteIndex < tempPacket.totalPackets);
 	
@@ -136,8 +143,12 @@ int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE
 		if(buffer[i].packetIndex == lastPacketIndex) {
 			fwrite(buffer[i].data + HEADER_SIZE, sizeof(char), buffer[i].dataSize, fp);
 			buffer[i].totalPackets = -1;
-			return lastPacketIndex + 1;
+			lastPacketIndex += 1;
 		}
+        else if (buffer[i].packetIndex < lastPacketIndex)
+        {
+            buffer[i].totalPackets = -1;
+        }
 	}
 	
 	return lastPacketIndex;
