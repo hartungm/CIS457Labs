@@ -58,7 +58,7 @@ int main(int argc, char** argv){
 	
 	unsigned int len = sizeof(struct sockaddr_in);
 	int packetWriteIndex = 0;
-	FILE *fp = fopen("/home/carlton/Desktop/test.png", "w");
+	FILE *fp = fopen("test2.png", "w");
 	
 	do {
 		int n = recvfrom(sockfd, tempPacket.data, 1024, 0, (struct sockaddr*)&serveraddr, &len);
@@ -135,16 +135,22 @@ int getChecksum(char *packet, int packetLength) {
 
 void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, socklen_t addrlen) {
 	
-	char ackPacket[5];
+	char ackPacket[9];
 	
-	ackPacket[0] = ACK_TYPE;
-    ackPacket[1] = (packetIndex >> 24) & 0xFF;
-    ackPacket[2] = (packetIndex >> 16) & 0xFF;
-    ackPacket[3] = (packetIndex >> 8) & 0xFF;
-    ackPacket[4] = packetIndex & 0xFF;
+	ackPacket[4] = ACK_TYPE;
+    ackPacket[5] = (packetIndex >> 24) & 0xFF;
+    ackPacket[6] = (packetIndex >> 16) & 0xFF;
+    ackPacket[7] = (packetIndex >> 8) & 0xFF;
+    ackPacket[8] = packetIndex & 0xFF;
 	
+    int checksum = getChecksum(ackPacket + 4, 5);
+    ackPacket[0] = (checksum >> 24) & 0xFF;
+    ackPacket[1] = (checksum >> 16) & 0xFF;
+    ackPacket[2] = (checksum >> 8) & 0xFF;
+    ackPacket[3] = checksum & 0xFF;
+    
 	printf("sending ack...%d\n",packetIndex);
-	sendto(sockfd, ackPacket, 5, 0, dest_addr, addrlen);
+	sendto(sockfd, ackPacket, 9, 0, dest_addr, addrlen);
 }
 
 int writePacket(struct Packet *buffer, int bufferSize, int lastPacketIndex, FILE *fp) {

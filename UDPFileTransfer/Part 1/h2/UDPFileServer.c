@@ -10,7 +10,7 @@
 
 #define ACK_TYPE 2
 #define HEADER_LENGTH 12
-#define ACK_MESSAGE_SIZE 5
+#define ACK_MESSAGE_SIZE 9
 #define MAX_PACKET_SIZE 1024
 #define SLIDING_WINDOW_SIZE 5
 #define MAX_TIME 0x7fffffffffffffff
@@ -203,9 +203,10 @@ void* ackListener(void *args)
 		
 		if(result > 0) 
 		{
-			if(ackMessage[0] == ACK_TYPE) 
+            int checksum = readInt(ackMessage);
+			if(ackMessage[4] == ACK_TYPE && checksum == getChecksum(ackMessage + 4, ACK_MESSAGE_SIZE - 4)) 
 			{
-				int ackIndex = readInt(ackMessage + 1);
+				int ackIndex = readInt(ackMessage + 5);
 				printf("Ack response received! - %d\n", ackIndex);
 				
 				if(ackIndex == lastAckIndex + 1) 
