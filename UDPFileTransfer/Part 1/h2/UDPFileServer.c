@@ -28,7 +28,7 @@ char* convertIntToByteArray(int num);
 void* ackListener(void *args);
 
 int lastAckIndex = -1;
-int ackBuffer[5] = {0, 0, 0, 0, 0};
+int ackBuffer[5] = {-1,-1,-1,-1,-1};
 
 int main (int argc, char **argv)
 {
@@ -97,10 +97,11 @@ int main (int argc, char **argv)
 				// Check to Make sure no packets are over there timeout time
 				for(packetMod = 0; packetMod < SLIDING_WINDOW_SIZE; packetMod++)
 				{
-					if((time(NULL) - sendTimes[packetMod]) > 2)
+					if((time(NULL) - sendTimes[packetMod]) > 1)
 					{
-// 						printf("Packet Timeout! Sending another!\n");
+ 						//printf("Packet Timeout! Sending another!\n");
 						sendto(sockfd, packetBuffer[packetMod], 1024, 0, (struct sockaddr*) &clientaddr, sizeof(clientaddr));
+                        sendTimes[packetMod] = time(NULL);
                     }	
 				}
 				if(packetIndex < lastAckIndex + SLIDING_WINDOW_SIZE) 
@@ -111,7 +112,7 @@ int main (int argc, char **argv)
                     int dataSize = (packetIndex+1)==totalPackets ? fileSize%(MAX_PACKET_SIZE - HEADER_LENGTH) : (MAX_PACKET_SIZE - HEADER_LENGTH);
 					int dataLength = fread(packet + 12, sizeof(char), dataSize, fp);
                     
-                    writeIntToPacket(getChecksum(packet + 4, dataSize), packet);
+                    writeIntToPacket(getChecksum(packet + 4, dataSize + HEADER_LENGTH), packet);
 					if(dataLength == 0) 
 					{
 						printf("Error reading from file\n");
@@ -134,7 +135,7 @@ int main (int argc, char **argv)
 					//*** Handle lost packets here ***//
 				}
 			}
-			sleep(1);
+			//sleep(1);
         }
     }
     return 0;
@@ -168,7 +169,7 @@ int getChecksum(char *packet, int packetLength) {
     
     int i = 0;
     for(i = 0; i < packetLength - 4; i++) {
-        checksum += (int)packet[i];
+        checksum += (unsigned char)packet[i];
     }
     
     return checksum;
@@ -204,7 +205,7 @@ void* ackListener(void *args)
 		if(result > 0) 
 		{
             int checksum = readInt(ackMessage);
-			if(ackMessage[4] == ACK_TYPE && checksum == getChecksum(ackMessage + 4, ACK_MESSAGE_SIZE - 4)) 
+			if(ackMessage[4] == ACK_TYPE && checksum == getChecksum(ackMessage + 4, ACK_MESSAGE_SIZE)) 
 			{
 				int ackIndex = readInt(ackMessage + 5);
 				printf("Ack response received! - %d\n", ackIndex);
@@ -212,22 +213,24 @@ void* ackListener(void *args)
 				if(ackIndex == lastAckIndex + 1) 
 				{
 					lastAckIndex++;
+                    for(i = 0; i < sizeof(ackBuffer); i++) 
+                    {
+                        printf("ackBuffer 1 %d lastack %d\n", ackBuffer[i], lastAckIndex);
+                        if(ackBuffer[i] == lastAckIndex + 1) 
+                        {
+                            lastAckIndex++;
+                            ackBuffer[i] = -1;
+                            i = -1;
+                        }
+                    }
 					
-					for(i = 0; i < sizeof(ackBuffer); i++) 
-					{
-						if(ackBuffer[i] == lastAckIndex + 1) 
-						{
-							lastAckIndex++;
-							ackBuffer[i] = 0;
-							i = -1;
-						}
-					}
 				} 
 				else if(ackIndex > lastAckIndex && ackIndex <= lastAckIndex + 5) 
 				{
 					for(i = 0; i < sizeof(ackBuffer); i++) 
 					{
-						if(ackBuffer[i] == 0) 
+                        printf("ackBuffer 2 %d lastack %d\n", ackBuffer[i], lastAckIndex);
+						if(ackBuffer[i] == -1)
 						{
 							ackBuffer[i] = ackIndex;
 							break;

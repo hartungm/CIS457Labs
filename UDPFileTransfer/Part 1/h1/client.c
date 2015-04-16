@@ -38,7 +38,7 @@ int main(int argc, char** argv){
 	struct sockaddr_in serveraddr;
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(9876);
-	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serveraddr.sin_addr.s_addr = inet_addr("10.0.0.2");
 
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
 
@@ -66,19 +66,19 @@ int main(int argc, char** argv){
 			printf("Sorry, had a problem receiving a response from the server.\n");
 			return 1;
 		}
-        
-		tempPacket.totalPackets = readInt(tempPacket.data + 4);
-		tempPacket.packetIndex = readInt(tempPacket.data + 8);
-		
-		if(tempPacket.totalPackets == 0 && tempPacket.packetIndex == 0) {
-			printf("The server couldn't find the file.\n");
-			return 1;
-		}
-		
         tempPacket.dataSize = n - HEADER_SIZE;
-        
         int checksum = readInt(tempPacket.data);
-        if(checksum == getChecksum(tempPacket.data + 4, tempPacket.dataSize)) {
+        if(checksum == getChecksum(tempPacket.data + 4, tempPacket.dataSize + HEADER_SIZE)) {
+        
+            tempPacket.totalPackets = readInt(tempPacket.data + 4);
+            tempPacket.packetIndex = readInt(tempPacket.data + 8);
+            
+            if(tempPacket.totalPackets == 0 && tempPacket.packetIndex == 0) {
+                printf("The server couldn't find the file.\n");
+                return 1;
+            }
+            
+        
             int added = addToBuffer(tempPacket, packetBuffer, BUFFER_SIZE);
             if(added == 0) {
                 printf("The packet buffer overflowed!!\n");
@@ -112,7 +112,7 @@ int addToBuffer(struct Packet packet, struct Packet *buffer, int bufferSize) {
 	
 	int i;
 	for(i = 0; i < bufferSize; i++) {
-		if(buffer[i].totalPackets == -1) {
+		if(buffer[i].totalPackets == -1 || buffer[i].packetIndex == packet.packetIndex) {
 			buffer[i] = packet;
 			return 1;
 		}
@@ -127,7 +127,7 @@ int getChecksum(char *packet, int packetLength) {
     
     int i = 0;
     for(i = 0; i < packetLength - 4; i++) {
-        checksum += (int)packet[i];
+        checksum += (unsigned char)packet[i];
     }
    
     return checksum;
@@ -143,7 +143,7 @@ void sendAck(int packetIndex, int sockfd, const struct sockaddr *dest_addr, sock
     ackPacket[7] = (packetIndex >> 8) & 0xFF;
     ackPacket[8] = packetIndex & 0xFF;
 	
-    int checksum = getChecksum(ackPacket + 4, 5);
+    int checksum = getChecksum(ackPacket + 4, 9);
     ackPacket[0] = (checksum >> 24) & 0xFF;
     ackPacket[1] = (checksum >> 16) & 0xFF;
     ackPacket[2] = (checksum >> 8) & 0xFF;
